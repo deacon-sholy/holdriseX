@@ -12,7 +12,7 @@ class SettingSeeder extends Seeder
         $settings = [
             // General
             ['key' => 'site_name', 'value' => 'Algo Trading', 'group_name' => 'general'],
-            ['key' => 'site_url', 'value' => 'https://demo.karamelscript.name.ng/algo', 'group_name' => 'general'],
+            ['key' => 'site_url', 'value' => 'https://demo.karamelscript.name.ng/holdrisex', 'group_name' => 'general'],
             ['key' => 'default_currency', 'value' => 'USD', 'group_name' => 'general'],
             ['key' => 'timezone', 'value' => 'UTC', 'group_name' => 'general'],
             ['key' => 'maintenance_mode', 'value' => 'false', 'group_name' => 'general'],
