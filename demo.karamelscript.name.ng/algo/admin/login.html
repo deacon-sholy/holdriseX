@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" x-data="{ darkMode: localStorage.getItem('theme') === 'light' ? false : true }" :class="{ 'dark': darkMode }">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algo Trading - Admin Login</title>
+    <link rel="shortcut icon" href="../storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .glass-effect {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
+    <script src="api.js"></script>
+</head>
+<body class="h-full bg-gray-900 font-sans antialiased transition-colors duration-300 text-gray-900" x-cloak>
+    <div class="min-h-screen bg-gray-900 flex items-center justify-center relative overflow-hidden px-4">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-primary-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
+        </div>
+
+        <div class="relative z-10 w-full max-w-lg">
+            <div class="text-center mb-8">
+                <a href="../index.html" class="inline-flex items-center gap-2">
+                    <span class="text-4xl font-extrabold tracking-tight text-white">Hold<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-cyan-400">RiseX</span></span>
+                </a>
+            </div>
+
+            <div class="bg-gray-800/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-600/20 mb-4">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-primary-400"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white">Admin Sign In</h1>
+                    <p class="text-gray-400 mt-2 text-sm">Secure access to the trading platform management</p>
+                </div>
+
+                <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-6">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0"></i>
+                        <p class="text-xs text-yellow-200">This is a restricted area. All access attempts are logged and monitored.</p>
+                    </div>
+                </div>
+
+                <form action="#" method="post" class="space-y-5"
+                      x-data="{ email: '', password: '', loading: false, error: '' }"
+                      @submit.prevent="loading = true; error = ''; apiPost('/admin/login', { email, password }).then(response => { setAuthToken(response.token); setAdminUser(response.user); window.location.href = 'dashboard.html'; }).catch(err => { error = err.message || 'Login failed. Please check your credentials.'; loading = false; })">
+                    <div x-show="error" x-cloak class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-2">
+                        <div class="flex items-start gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-xs text-red-200" x-text="error"></p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="email" class="block text-sm font-semibold text-gray-200">Email Address</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4">
+                                <i data-lucide="mail" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <input type="email" id="email" required x-model="email"
+                                   class="block w-full rounded-xl border border-gray-600 bg-gray-900/50 pl-12 pr-4 py-3.5 text-white placeholder-gray-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 text-sm"
+                                   placeholder="admin@holdrisex.com">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="password" class="block text-sm font-semibold text-gray-200">Password</label>
+                        <div class="relative" x-data="{ showPassword: false }">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4">
+                                <i data-lucide="lock" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <input :type="showPassword ? 'text' : 'password'" id="password" required x-model="password"
+                                   class="block w-full rounded-xl border border-gray-600 bg-gray-900/50 pl-12 pr-12 py-3.5 text-white placeholder-gray-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 text-sm"
+                                   placeholder="Enter your password">
+                            <button type="button" @click="showPassword = !showPassword"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-primary-400 transition-colors">
+                                <i data-lucide="eye" class="h-5 w-5" x-show="!showPassword"></i>
+                                <i data-lucide="eye-off" class="h-5 w-5" x-show="showPassword" x-cloak></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" class="w-4 h-4 rounded border-gray-600 bg-gray-900 text-primary-500 focus:ring-primary-500/20">
+                            <span class="text-gray-300">Remember me</span>
+                        </label>
+                        <a href="forgot-password.html" class="text-primary-400 hover:text-primary-300 transition-colors text-sm">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" :disabled="loading"
+                            class="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-cyan-600 hover:from-primary-700 hover:to-cyan-700 px-6 py-3.5 text-sm font-bold text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        <svg x-show="loading" x-cloak class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <i x-show="!loading" data-lucide="log-in" class="h-5 w-5"></i>
+                        <span x-text="loading ? 'Signing in...' : 'Sign In to Admin Panel'"></span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <a href="../login.html" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">
+                        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i>
+                        Back to main site
+                    </a>
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-gray-500 mt-6">&copy; 2026 HoldRiseX. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
+        document.addEventListener('alpine:updated', () => { lucide.createIcons(); });
+    </script>
+</body>
+</html>
