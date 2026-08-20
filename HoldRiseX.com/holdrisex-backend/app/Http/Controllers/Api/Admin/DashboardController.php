@@ -14,7 +14,7 @@ class DashboardController extends Controller
 {
     public function index(): JsonResponse
     {
-        $totalUsers = User::count();
+        $totalUsers = User::where('role', 'user')->count();
         $totalDeposits = Deposit::where('status', 'completed')->sum('amount');
         $totalWithdrawals = Withdrawal::where('status', 'completed')->sum('amount');
         $activeTrades = Trade::where('status', 'open')->count();
@@ -60,11 +60,10 @@ class DashboardController extends Controller
 
         $monthlyRevenue = Deposit::where('status', 'completed')
             ->whereYear('created_at', now()->year)
-            ->selectRaw('MONTH(created_at) as month, SUM(amount) as total')
-            ->groupByRaw('MONTH(created_at)')
-            ->orderBy('month')
-            ->get()
-            ->pluck('total', 'month');
+            ->get(['created_at', 'amount'])
+            ->groupBy(fn ($deposit) => $deposit->created_at->month)
+            ->map(fn ($deposits) => (float) $deposits->sum('amount'))
+            ->sortKeys();
 
         $totalTradesCount = max(Trade::count(), 1);
         $completedTrades = Trade::where('status', 'closed')->count();

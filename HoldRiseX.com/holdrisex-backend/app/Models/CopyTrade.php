@@ -11,27 +11,25 @@ class CopyTrade extends Model
     use HasFactory;
 
     protected $fillable = [
-        'copy_trader_id',
         'user_id',
-        'pair',
-        'amount',
+        'trader_id',
+        'symbol',
+        'lots',
         'pnl',
         'status',
-        'closed_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
+            'lots' => 'decimal:4',
             'pnl' => 'decimal:2',
-            'closed_at' => 'datetime',
         ];
     }
 
     public function copyTrader(): BelongsTo
     {
-        return $this->belongsTo(CopyTrader::class);
+        return $this->belongsTo(CopyTrader::class, 'trader_id');
     }
 
     public function user(): BelongsTo

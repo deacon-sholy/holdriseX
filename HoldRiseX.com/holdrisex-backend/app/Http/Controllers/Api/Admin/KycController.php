@@ -67,7 +67,7 @@ class KycController extends Controller
 
         $document->update([
             'status' => 'rejected',
-            'admin_note' => request()->input('reason', 'Documents do not meet requirements.'),
+            'admin_note' => request()->input('reason', request()->input('admin_note', 'Documents do not meet requirements.')),
             'reviewed_at' => now(),
         ]);
 

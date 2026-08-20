@@ -56,6 +56,8 @@ class UserController extends Controller
             'role' => 'nullable|in:user,admin',
             'phone' => 'nullable|string',
             'country' => 'nullable|string',
+            'is_active' => 'sometimes|boolean',
+            'kyc_status' => 'sometimes|in:none,pending,verified,rejected',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -82,6 +84,8 @@ class UserController extends Controller
             'role' => 'sometimes|in:user,admin',
             'phone' => 'nullable|string',
             'country' => 'nullable|string',
+            'is_active' => 'sometimes|boolean',
+            'kyc_status' => 'sometimes|in:none,pending,verified,rejected',
         ]);
 
         if (!empty($validated['password'])) {

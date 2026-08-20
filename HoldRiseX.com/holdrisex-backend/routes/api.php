@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Admin\TradeController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\WithdrawalController;
+use App\Http\Controllers\Api\User;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/admin/login', [AuthController::class, 'login']);
@@ -62,4 +63,63 @@ Route::middleware('auth:sanctum', 'admin')->prefix('admin')->group(function () {
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
     Route::get('/audit-logs-stats', [AuditLogController::class, 'stats']);
+});
+
+// ─── User Routes ──────────────────────────────────────────────
+// Public (no auth)
+Route::get('/plans', [User\InvestmentController::class, 'plans']);
+Route::get('/deposit-settings', [User\InvestmentController::class, 'depositSettings']);
+Route::post('/user/register', [User\AuthController::class, 'register']);
+Route::post('/user/login', [User\AuthController::class, 'login']);
+Route::post('/user/forgot-password', [User\AuthController::class, 'forgotPassword']);
+Route::post('/user/reset-password', [User\AuthController::class, 'resetPassword']);
+
+// Protected (auth:sanctum + auth.user middleware)
+Route::middleware('auth:sanctum', 'auth.user')->prefix('user')->group(function () {
+    Route::post('/logout', [User\AuthController::class, 'logout']);
+    Route::get('/me', [User\AuthController::class, 'me']);
+
+    Route::get('/dashboard', [User\DashboardController::class, 'index']);
+
+    Route::get('/profile', [User\ProfileController::class, 'show']);
+    Route::put('/profile', [User\ProfileController::class, 'update']);
+    Route::put('/password', [User\ProfileController::class, 'changePassword']);
+
+    Route::get('/deposits', [User\DepositController::class, 'index']);
+    Route::get('/deposits/{id}', [User\DepositController::class, 'show']);
+    Route::post('/deposits', [User\DepositController::class, 'store']);
+    Route::get('/deposits-stats', [User\DepositController::class, 'stats']);
+
+    Route::get('/withdrawals', [User\WithdrawalController::class, 'index']);
+    Route::get('/withdrawals/{id}', [User\WithdrawalController::class, 'show']);
+    Route::post('/withdrawals', [User\WithdrawalController::class, 'store']);
+    Route::get('/withdrawals-stats', [User\WithdrawalController::class, 'stats']);
+
+    Route::get('/plans', [User\InvestmentController::class, 'plans']);
+    Route::get('/plans/{id}', [User\InvestmentController::class, 'plan']);
+    Route::post('/invest', [User\InvestmentController::class, 'invest']);
+    Route::get('/investments', [User\InvestmentController::class, 'myInvestments']);
+    Route::get('/investments/{id}', [User\InvestmentController::class, 'showInvestment']);
+    Route::get('/investments-stats', [User\InvestmentController::class, 'stats']);
+
+    Route::get('/trades', [User\TradeController::class, 'index']);
+    Route::get('/trades/{id}', [User\TradeController::class, 'show']);
+    Route::post('/trades/open', [User\TradeController::class, 'open']);
+    Route::post('/trades/{id}/close', [User\TradeController::class, 'close']);
+    Route::get('/trades-stats', [User\TradeController::class, 'stats']);
+
+    Route::get('/copy-traders', [User\CopyTradingController::class, 'traders']);
+    Route::get('/copy-traders/{id}', [User\CopyTradingController::class, 'trader']);
+    Route::post('/copy-traders/{traderId}/subscribe', [User\CopyTradingController::class, 'subscribe']);
+    Route::get('/my-copy-trades', [User\CopyTradingController::class, 'myCopyTrades']);
+    Route::post('/copy-trades/{id}/close', [User\CopyTradingController::class, 'closeCopyTrade']);
+    Route::get('/copy-trades-stats', [User\CopyTradingController::class, 'stats']);
+
+    Route::get('/kyc', [User\KycController::class, 'index']);
+    Route::get('/kyc/{id}', [User\KycController::class, 'show']);
+    Route::post('/kyc', [User\KycController::class, 'store']);
+    Route::get('/kyc-status', [User\KycController::class, 'status']);
+
+    Route::get('/announcements', [User\AnnouncementController::class, 'index']);
+    Route::get('/announcements/{id}', [User\AnnouncementController::class, 'show']);
 });

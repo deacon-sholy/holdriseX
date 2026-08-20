@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: localStorage.getItem('theme') !== 'light' }" :class="{ 'dark': darkMode }" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoldRiseX - Support Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+                        dark: { 100:'#374151',200:'#1F2937',300:'#111827',400:'#0F172A',500:'#0B1120' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="user-api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+        html:not(.dark) body { background: #f3f4f6; color: #111827; }
+        html:not(.dark) .bg-dark-300 { background: #f9fafb; }
+        html:not(.dark) .bg-dark-400 { background: #ffffff; }
+        html:not(.dark) .border-gray-800 { border-color: #e5e7eb; }
+        html:not(.dark) .text-gray-200, html:not(.dark) .text-gray-300, html:not(.dark) .text-gray-400 { color: #4b5563; }
+        html:not(.dark) .hover\:bg-dark-200:hover { background: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-dark-300 text-gray-200 font-sans min-h-screen"
+      x-data="supportPage()" x-init="init()" x-cloak>
+
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/60 z-40 md:hidden" x-transition.opacity style="display:none"></div>
+
+    <aside class="fixed top-0 left-0 h-full w-72 bg-dark-400 border-r border-gray-800 z-50 flex flex-col transition-transform duration-300"
+           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+        <div class="h-16 flex items-center justify-between px-5 border-b border-gray-800">
+            <a href="index.html" class="flex items-center gap-2">
+                <span class="text-xl font-extrabold tracking-tight text-white">Hold<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">RiseX</span></span>
+            </a>
+            <button @click="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 border-b border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white truncate" x-text="user?.name || 'User'"></p>
+                    <p class="text-xs text-gray-400 truncate" x-text="user?.email || ''"></p>
+                </div>
+            </div>
+            <div class="mt-3 bg-dark-300 rounded-lg p-3">
+                <p class="text-xs text-gray-400">Available Balance</p>
+                <p class="text-lg font-bold text-white" x-text="formatCurrency(dash?.balance)"></p>
+            </div>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mb-2">Overview</p>
+            <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
+            <a href="statement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="file-text" class="w-4 h-4"></i> Account Statement</a>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Trading & Markets</p>
+            <a href="trade.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="activity" class="w-4 h-4"></i> Live Markets <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium">Live</span></a>
+            <a href="copy.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="copy" class="w-4 h-4"></i> Copy Trading <span class="ml-auto text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-medium">Pro</span></a>
+            <a href="automate.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="bot" class="w-4 h-4"></i> AI Trading Bots <span class="ml-auto text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-medium">AI</span></a>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Portfolio</p>
+            <a href="plans.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="briefcase" class="w-4 h-4"></i> Investment Plans</a>
+            <a href="portfolio.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="pie-chart" class="w-4 h-4"></i> My Portfolio</a>
+            <a href="performance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="activity" class="w-4 h-4"></i> Performance History</a>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Market Intelligence</p>
+            <a href="signals.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="zap" class="w-4 h-4"></i> Premium Signals <span class="ml-auto text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium">Premium</span></a>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Wallet & Funds</p>
+            <a href="deposit.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i> Deposit Funds</a>
+            <a href="withdraw.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Withdraw Funds</a>
+            <a href="transfer.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="repeat" class="w-4 h-4"></i> Internal Transfer</a>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Credit & Financing</p>
+            <a href="credit.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="credit-card" class="w-4 h-4"></i> Apply for Credit <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium">Fast</span></a>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Account</p>
+            <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="settings" class="w-4 h-4"></i> Profile Settings</a>
+            <a href="kyc.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification</a>
+            <a href="referrals.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition"><i data-lucide="users" class="w-4 h-4"></i> Referral Program <span class="ml-auto text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">5%</span></a>
+            <a href="support.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400"><i data-lucide="headphones" class="w-4 h-4"></i> Support</a>
+            <div class="pt-4 mt-4 border-t border-gray-800">
+                <button @click="userLogout()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</button>
+            </div>
+        </nav>
+    </aside>
+
+    <div class="md:ml-64 min-h-screen flex flex-col">
+        <nav class="sticky top-0 z-40 bg-dark-400/95 backdrop-blur-xl border-b border-gray-800">
+            <div class="flex items-center justify-between h-16 px-4 lg:px-6">
+                <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 text-gray-400 hover:text-white"><i data-lucide="menu" class="w-5 h-5"></i></button>
+                <div class="hidden md:block"></div>
+                <div class="flex items-center gap-4">
+                    <div class="bg-dark-300 rounded-xl px-5 py-2 flex items-center gap-3 border border-gray-800">
+                        <div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-4 h-4 text-green-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase">Balance</p>
+                            <p class="text-sm font-bold text-white" x-text="formatCurrency(dash?.balance)"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition hidden sm:block">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <a href="deposit.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-down-circle" class="w-4 h-4 text-green-400"></i> Deposit</a>
+                            <a href="withdraw.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-up-circle" class="w-4 h-4 text-red-400"></i> Withdraw</a>
+                            <a href="trade.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="activity" class="w-4 h-4 text-blue-400"></i> Trade</a>
+                        </div>
+                    </div>
+                    <button @click="toggleTheme()" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition">
+                        <i :data-lucide="darkMode ? 'sun' : 'moon'" class="w-5 h-5"></i>
+                    </button>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-dark-300 transition">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                            <span class="text-sm text-gray-300 hidden sm:block" x-text="user?.name?.split(' ')[0] || 'User'"></span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <div class="px-4 py-2 border-b border-gray-800">
+                                <p class="text-sm font-semibold text-white" x-text="user?.name || 'User'"></p>
+                                <p class="text-xs text-gray-400" x-text="user?.email || ''"></p>
+                            </div>
+                            <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="settings" class="w-4 h-4"></i> Profile Settings</a>
+                            <a href="kyc.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification</a>
+                            <div class="border-t border-gray-800 mt-1 pt-1">
+                                <button @click="userLogout()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-1 p-4 lg:p-6">
+            <div x-show="loading" class="flex items-center justify-center py-20">
+                <div class="text-center">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="mt-3 text-gray-400 text-sm">Loading support center...</p>
+                </div>
+            </div>
+
+            <div x-show="!loading">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white">Support Center</h1>
+                    <p class="text-sm text-gray-400 mt-1">Get help with your account and trades</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="lg:col-span-2 bg-dark-400 border border-gray-800 rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><i data-lucide="message-square-plus" class="w-5 h-5 text-blue-400"></i></div>
+                            <h3 class="text-base font-semibold text-white">Create New Ticket</h3>
+                        </div>
+                        <form @submit.prevent="createTicket()">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Subject</label>
+                                    <input x-model="form.subject" type="text" required class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600" placeholder="Brief description of your issue">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Category</label>
+                                    <select x-model="form.category" required class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition">
+                                        <option value="" disabled selected>Select category</option>
+                                        <option value="account">Account</option>
+                                        <option value="deposits">Deposits</option>
+                                        <option value="withdrawals">Withdrawals</option>
+                                        <option value="trading">Trading</option>
+                                        <option value="technical">Technical</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Priority</label>
+                                    <select x-model="form.priority" required class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition">
+                                        <option value="" disabled selected>Select priority</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Message</label>
+                                <textarea x-model="form.message" required rows="5" class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600 resize-none" placeholder="Describe your issue in detail..."></textarea>
+                            </div>
+                            <button type="submit" :disabled="submitting"
+                                    class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-indigo-700 transition shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <svg x-show="submitting" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span x-text="submitting ? 'Submitting...' : 'Submit Ticket'"></span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center"><i data-lucide="headphones" class="w-5 h-5 text-green-400"></i></div>
+                                <h4 class="text-sm font-semibold text-white">Need Urgent Help?</h4>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3">Our support team is available 24/7 to assist you with any issues.</p>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center gap-2 text-gray-400"><i data-lucide="mail" class="w-3.5 h-3.5 text-blue-400"></i> support@holdrisex.com</div>
+                                <div class="flex items-center gap-2 text-gray-400"><i data-lucide="message-circle" class="w-3.5 h-3.5 text-green-400"></i> Live Chat Available</div>
+                            </div>
+                        </div>
+                        <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center"><i data-lucide="help-circle" class="w-5 h-5 text-yellow-400"></i></div>
+                                <h4 class="text-sm font-semibold text-white">FAQ</h4>
+                            </div>
+                            <p class="text-xs text-gray-400">Check our frequently asked questions for quick answers to common issues.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-400 border border-gray-800 rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-semibold text-white">Your Tickets</h3>
+                        <span class="text-xs text-gray-400" x-text="tickets.length + ' tickets'"></span>
+                    </div>
+
+                    <div x-show="tickets.length === 0" class="text-center py-12">
+                        <i data-lucide="inbox" class="w-12 h-12 text-gray-700 mx-auto mb-3"></i>
+                        <p class="text-sm text-gray-500">No support tickets yet</p>
+                        <p class="text-xs text-gray-600 mt-1">Create a ticket above to get help</p>
+                    </div>
+
+                    <div x-show="tickets.length > 0" class="space-y-3">
+                        <template x-for="ticket in tickets" :key="ticket.id">
+                            <div class="bg-dark-300 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition cursor-pointer" @click="openTicket(ticket)">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                             :class="{'bg-blue-500/10': ticket.priority === 'low', 'bg-yellow-500/10': ticket.priority === 'medium', 'bg-red-500/10': ticket.priority === 'high'}">
+                                            <i :data-lucide="ticket.priority === 'high' ? 'alert-triangle' : ticket.priority === 'medium' ? 'alert-circle' : 'info'" class="w-4 h-4"
+                                               :class="{'text-red-400': ticket.priority === 'high', 'text-yellow-400': ticket.priority === 'medium', 'text-blue-400': ticket.priority === 'low'}"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-sm font-semibold text-white truncate" x-text="ticket.subject"></p>
+                                            <p class="text-xs text-gray-500" x-text="'#' + ticket.id + ' - ' + formatDate(ticket.created_at)"></p>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] px-2.5 py-1 rounded-full font-medium shrink-0 ml-3"
+                                          :class="{
+                                              'bg-green-500/20 text-green-400': ticket.status === 'open' || ticket.status === 'resolved',
+                                              'bg-yellow-500/20 text-yellow-400': ticket.status === 'pending' || ticket.status === 'in_progress',
+                                              'bg-gray-500/20 text-gray-400': ticket.status === 'closed'
+                                          }"
+                                          x-text="ticket.status === 'in_progress' ? 'In Progress' : (ticket.status || 'open').charAt(0).toUpperCase() + (ticket.status || 'open').slice(1)"></span>
+                                </div>
+                                <p class="text-xs text-gray-400 line-clamp-2 ml-11" x-text="ticket.message || ticket.body || ''"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div x-show="selectedTicket" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+                    <div class="absolute inset-0 bg-black/60" @click="selectedTicket = null"></div>
+                    <div class="relative bg-dark-400 border border-gray-800 rounded-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-white" x-text="selectedTicket?.subject"></h3>
+                            <button @click="selectedTicket = null" class="p-1 text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+                                  :class="{'bg-green-500/20 text-green-400': selectedTicket?.status === 'open', 'bg-yellow-500/20 text-yellow-400': selectedTicket?.status === 'pending' || selectedTicket?.status === 'in_progress', 'bg-gray-500/20 text-gray-400': selectedTicket?.status === 'closed'}"
+                                  x-text="selectedTicket?.status"></span>
+                            <span class="text-xs text-gray-500" x-text="'Created ' + formatDate(selectedTicket?.created_at)"></span>
+                        </div>
+                        <div class="bg-dark-300 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-300 whitespace-pre-wrap" x-text="selectedTicket?.message || selectedTicket?.body || ''"></p>
+                        </div>
+
+                        <div x-show="selectedTicket?.replies?.length > 0" class="space-y-3 mb-4">
+                            <template x-for="reply in (selectedTicket?.replies || [])" :key="reply.id">
+                                <div class="bg-dark-300 rounded-lg p-4" :class="reply.is_admin ? 'border-l-2 border-blue-500' : ''">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                             :class="reply.is_admin ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-600 text-gray-300'"
+                                             x-text="reply.is_admin ? 'S' : (user?.name || 'U')[0]?.toUpperCase()"></div>
+                                        <span class="text-xs font-medium text-white" x-text="reply.is_admin ? 'Support' : 'You'"></span>
+                                        <span class="text-[10px] text-gray-500" x-text="formatDate(reply.created_at)"></span>
+                                    </div>
+                                    <p class="text-sm text-gray-300 whitespace-pre-wrap" x-text="reply.message || reply.body || ''"></p>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div x-show="selectedTicket?.status !== 'closed'">
+                            <label class="block text-xs font-medium text-gray-400 mb-1.5">Reply</label>
+                            <textarea x-model="replyMessage" rows="3" class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600 resize-none mb-3" placeholder="Type your reply..."></textarea>
+                            <button @click="sendReply()" :disabled="!replyMessage.trim() || sendingReply"
+                                    class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-indigo-700 transition shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <span x-text="sendingReply ? 'Sending...' : 'Send Reply'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function supportPage() {
+            return {
+                user: null,
+                dash: { balance: 0 },
+                loading: true,
+                sidebarOpen: false,
+                submitting: false,
+                sendingReply: false,
+                tickets: [],
+                selectedTicket: null,
+                replyMessage: '',
+                form: { subject: '', category: '', priority: '', message: '' },
+
+                async init() {
+                    if (!requireUserAuth()) return;
+                    this.user = getUserData();
+                    try {
+                        const data = await userApiGet('/user/tickets');
+                        if (data) {
+                            this.tickets = Array.isArray(data) ? data : (data.data || data.tickets || []);
+                            if (data.balance !== undefined) this.dash.balance = data.balance;
+                        }
+                    } catch(e) { console.error(e); }
+                    this.loading = false;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                async createTicket() {
+                    this.submitting = true;
+                    try {
+                        const res = await userApiPost('/user/tickets', {
+                            subject: this.form.subject,
+                            category: this.form.category,
+                            priority: this.form.priority,
+                            message: this.form.message
+                        });
+                        if (res && !res.error) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Ticket Created',
+                                text: 'Your support ticket has been submitted. We will respond shortly.',
+                                confirmButtonColor: '#6366f1',
+                                background: '#0F172A',
+                                color: '#e5e7eb'
+                            });
+                            this.form = { subject: '', category: '', priority: '', message: '' };
+                            await this.loadTickets();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed',
+                                text: res?.message || res?.error || 'Failed to create ticket.',
+                                confirmButtonColor: '#6366f1',
+                                background: '#0F172A',
+                                color: '#e5e7eb'
+                            });
+                        }
+                    } catch(e) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An unexpected error occurred.',
+                            confirmButtonColor: '#6366f1',
+                            background: '#0F172A',
+                            color: '#e5e7eb'
+                        });
+                    }
+                    this.submitting = false;
+                },
+
+                async loadTickets() {
+                    try {
+                        const data = await userApiGet('/user/tickets');
+                        if (data) this.tickets = Array.isArray(data) ? data : (data.data || data.tickets || []);
+                    } catch(e) { console.error(e); }
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                openTicket(ticket) {
+                    this.selectedTicket = { ...ticket };
+                    this.replyMessage = '';
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                async sendReply() {
+                    if (!this.replyMessage.trim() || !this.selectedTicket) return;
+                    this.sendingReply = true;
+                    try {
+                        const res = await userApiPost('/user/tickets/' + this.selectedTicket.id + '/replies', {
+                            message: this.replyMessage
+                        });
+                        if (res && !res.error) {
+                            if (!this.selectedTicket.replies) this.selectedTicket.replies = [];
+                            this.selectedTicket.replies.push({
+                                id: Date.now(),
+                                message: this.replyMessage,
+                                is_admin: false,
+                                created_at: new Date().toISOString()
+                            });
+                            this.replyMessage = '';
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed',
+                                text: res?.message || res?.error || 'Failed to send reply.',
+                                confirmButtonColor: '#6366f1',
+                                background: '#0F172A',
+                                color: '#e5e7eb'
+                            });
+                        }
+                    } catch(e) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to send reply.',
+                            confirmButtonColor: '#6366f1',
+                            background: '#0F172A',
+                            color: '#e5e7eb'
+                        });
+                    }
+                    this.sendingReply = false;
+                },
+
+                toggleTheme() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+                    this.$nextTick(() => lucide.createIcons());
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+        document.addEventListener('alpine:updated', () => lucide.createIcons());
+    </script>
+</body>
+</html>

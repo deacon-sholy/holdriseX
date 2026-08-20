@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algo Trading - Audit Logs</title>
+    <title>HoldRiseX - Audit Logs</title>
+    <link href="../favicon.svg" rel="icon" type="image/svg+xml" />
     <link rel="shortcut icon" href="../storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +26,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="api.js"></script>
     <style>
         [x-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 6px; }
@@ -39,7 +41,7 @@
         .stat-card { transition: all 0.3s ease; }
     </style>
 </head>
-<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="{ sidebarOpen: true, mobileSidebar: false }">
+<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="{ sidebarOpen: true, mobileSidebar: false }" x-init="requireAuth()">
 
 <!-- Mobile sidebar overlay -->
 <div x-show="mobileSidebar" x-cloak @click="mobileSidebar = false"
@@ -123,7 +125,7 @@
 
     <!-- Bottom -->
     <div class="p-3 border-t border-gray-800">
-        <a href="login.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
+        <a href="login.html" @click="clearAuthToken()" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
             <i data-lucide="log-out" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">Logout</span>
         </a>
@@ -201,9 +203,9 @@
                 <!-- Admin Profile -->
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800 transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">A</div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold" x-text="getAdminUser() ? getAdminUser().name.charAt(0) : 'A'"></div>
                         <div class="hidden sm:block text-left">
-                            <p class="text-sm font-medium text-white leading-tight">Admin</p>
+                            <p class="text-sm font-medium text-white leading-tight" x-text="getAdminUser() ? getAdminUser().name : 'Admin'"></p>
                             <p class="text-xs text-gray-400">Super Admin</p>
                         </div>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
@@ -224,93 +226,7 @@
     </header>
 
     <!-- Page Content -->
-    <main class="p-4 sm:p-6 lg:p-8" x-data="{
-        search: '',
-        actionFilter: 'all',
-        dateFrom: '',
-        dateTo: '',
-        adminFilter: '',
-        currentPage: 1,
-        perPage: 10,
-        detailOpen: false,
-        selectedLog: null,
-        logs: [
-            { id: 'AUD-001', timestamp: '2026-08-17 09:42:18', admin: 'Admin (Super)', action: 'Login', details: 'Successful login from new IP address 192.168.1.45', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'info' },
-            { id: 'AUD-002', timestamp: '2026-08-17 09:38:05', admin: 'Admin (Super)', action: 'Deposit', details: 'Approved $15,000 deposit from John Doe (john@email.com) via bank transfer', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'success' },
-            { id: 'AUD-003', timestamp: '2026-08-17 09:21:33', admin: 'Agent Smith', action: 'Withdrawal', details: 'Rejected $8,500 withdrawal request from user #4821 (Emma Wilson) — insufficient KYC', ip: '10.0.0.87', browser: 'Firefox 128 / macOS', status: 'Rejected', severity: 'warning' },
-            { id: 'AUD-004', timestamp: '2026-08-17 09:15:10', admin: 'Admin (Super)', action: 'Settings', details: 'Updated platform maintenance mode setting — set to OFF', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'info' },
-            { id: 'AUD-005', timestamp: '2026-08-17 08:57:44', admin: 'Agent Smith', action: 'User Mgmt', details: 'Suspended user account #3092 (Robert Johnson) for suspicious trading activity', ip: '10.0.0.87', browser: 'Firefox 128 / macOS', status: 'Success', severity: 'critical' },
-            { id: 'AUD-006', timestamp: '2026-08-17 08:45:22', admin: 'Admin (Super)', action: 'Trade', details: 'Executed market buy order — BTC/USDT 0.5 @ $68,432.10 for user portfolio #112', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'info' },
-            { id: 'AUD-007', timestamp: '2026-08-17 08:30:00', admin: 'System', action: 'Login', details: 'Automated system backup completed successfully', ip: '127.0.0.1', browser: 'Server / Ubuntu 22.04', status: 'Success', severity: 'info' },
-            { id: 'AUD-008', timestamp: '2026-08-17 08:12:55', admin: 'Agent Smith', action: 'Deposit', details: 'Credited $50,000 to platform reserve wallet from external transfer', ip: '10.0.0.87', browser: 'Firefox 128 / macOS', status: 'Success', severity: 'info' },
-            { id: 'AUD-009', timestamp: '2026-08-17 07:58:11', admin: 'Admin (Super)', action: 'User Mgmt', details: 'Approved KYC Level 2 verification for Alice Lee (alice@email.com)', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'success' },
-            { id: 'AUD-010', timestamp: '2026-08-17 07:42:30', admin: 'Agent Smith', action: 'Withdrawal', details: 'Approved $3,200 withdrawal for Michael Brown (michael@email.com) to BTC wallet', ip: '10.0.0.87', browser: 'Firefox 128 / macOS', status: 'Success', severity: 'info' },
-            { id: 'AUD-011', timestamp: '2026-08-17 07:20:18', admin: 'Admin (Super)', action: 'Settings', details: 'Changed minimum deposit limit from $100 to $250', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'warning' },
-            { id: 'AUD-012', timestamp: '2026-08-17 06:55:47', admin: 'System', action: 'Trade', details: 'Auto-closed 12 expired pending orders — total freed margin $124,500', ip: '127.0.0.1', browser: 'Server / Ubuntu 22.04', status: 'Success', severity: 'info' },
-            { id: 'AUD-013', timestamp: '2026-08-17 06:30:12', admin: 'Agent Smith', action: 'Login', details: 'Failed login attempt — incorrect password (attempt 2/5)', ip: '203.0.113.42', browser: 'Chrome 123 / Android 14', status: 'Failed', severity: 'critical' },
-            { id: 'AUD-014', timestamp: '2026-08-17 05:48:33', admin: 'Admin (Super)', action: 'Deposit', details: 'Approved $25,000 deposit from James Carter (james@email.com) via ETH transfer — TX: 0x8a3f...b2c1', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'info' },
-            { id: 'AUD-015', timestamp: '2026-08-17 05:15:09', admin: 'Agent Smith', action: 'User Mgmt', details: 'Reset 2FA for user #2187 (Lisa Park) after identity verification call', ip: '10.0.0.87', browser: 'Firefox 128 / macOS', status: 'Success', severity: 'warning' },
-            { id: 'AUD-016', timestamp: '2026-08-17 04:32:55', admin: 'Admin (Super)', action: 'Trade', details: 'Executed limit sell order — ETH/USDT 5.0 @ $3,456.78 — profit $1,240.50', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Success', severity: 'info' },
-            { id: 'AUD-017', timestamp: '2026-08-17 03:10:22', admin: 'System', action: 'Settings', details: 'Daily database backup completed — 2.4GB archived', ip: '127.0.0.1', browser: 'Server / Ubuntu 22.04', status: 'Success', severity: 'info' },
-            { id: 'AUD-018', timestamp: '2026-08-17 02:45:18', admin: 'Admin (Super)', action: 'Withdrawal', details: 'Reversed failed withdrawal #WD-8842 for David Kim — ETH network congestion', ip: '192.168.1.45', browser: 'Chrome 124 / Windows 11', status: 'Reversed', severity: 'warning' },
-            { id: 'AUD-019', timestamp: '2026-08-17 01:20:00', admin: 'System', action: 'Login', details: 'Scheduled API key rotation completed for all exchange integrations', ip: '127.0.0.1', browser: 'Server / Ubuntu 22.04', status: 'Success', severity: 'info' },
-            { id: 'AUD-020', timestamp: '2026-08-16 23:55:14', admin: 'Agent Smith', action: 'Deposit', details: 'Approved $7,500 deposit from Nina Garcia (nina@email.com) — bonus tier upgraded to Gold', ip: '10.0.0.87', browser: 'Firefox 128 / macOS', status: 'Success', severity: 'success' }
-        ],
-        get filteredLogs() {
-            let result = this.logs;
-            if (this.actionFilter !== 'all') {
-                const map = { login: 'Login', deposit: 'Deposit', withdrawal: 'Withdrawal', trade: 'Trade', settings: 'Settings', user: 'User Mgmt' };
-                result = result.filter(l => l.action === map[this.actionFilter]);
-            }
-            if (this.search) {
-                const q = this.search.toLowerCase();
-                result = result.filter(l => l.details.toLowerCase().includes(q) || l.admin.toLowerCase().includes(q) || l.ip.includes(q) || l.id.toLowerCase().includes(q));
-            }
-            if (this.adminFilter) {
-                const q = this.adminFilter.toLowerCase();
-                result = result.filter(l => l.admin.toLowerCase().includes(q));
-            }
-            if (this.dateFrom) {
-                result = result.filter(l => l.timestamp >= this.dateFrom);
-            }
-            if (this.dateTo) {
-                result = result.filter(l => l.timestamp <= this.dateTo + ' 23:59:59');
-            }
-            return result;
-        },
-        get pagedLogs() {
-            const start = (this.currentPage - 1) * this.perPage;
-            return this.filteredLogs.slice(start, start + this.perPage);
-        },
-        get totalPages() {
-            return Math.max(1, Math.ceil(this.filteredLogs.length / this.perPage));
-        },
-        openDetail(log) { this.selectedLog = log; this.detailOpen = true; },
-        actionBadgeClass(action) {
-            const map = {
-                'Login': 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
-                'Deposit': 'bg-green-500/15 text-green-400 border border-green-500/30',
-                'Withdrawal': 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30',
-                'Trade': 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
-                'Settings': 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
-                'User Mgmt': 'bg-red-500/15 text-red-400 border border-red-500/30',
-            };
-            return map[action] || 'bg-gray-500/15 text-gray-400';
-        },
-        statusBadgeClass(status) {
-            const map = {
-                'Success': 'bg-green-500/10 text-green-400',
-                'Failed': 'bg-red-500/10 text-red-400',
-                'Rejected': 'bg-yellow-500/10 text-yellow-400',
-                'Reversed': 'bg-orange-500/10 text-orange-400',
-            };
-            return map[status] || 'bg-gray-500/10 text-gray-400';
-        },
-        severityDotClass(severity) {
-            const map = { success: 'bg-green-400', info: 'bg-blue-400', warning: 'bg-yellow-400', critical: 'bg-red-400 animate-pulse' };
-            return map[severity] || 'bg-gray-400';
-        }
-    }">
+    <main class="p-4 sm:p-6 lg:p-8" x-data="logsApp()">
 
         <!-- Page Header -->
         <div class="mb-8 animate-fade-in">
@@ -341,7 +257,7 @@
                         <i data-lucide="scroll-text" class="w-5 h-5 text-primary-400"></i>
                     </div>
                 </div>
-                <h3 class="text-2xl font-bold text-white">45,234</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.total?.toLocaleString() || '0'"></h3>
                 <p class="text-gray-400 text-sm mt-1">Total Logs</p>
             </div>
 
@@ -352,10 +268,10 @@
                         <i data-lucide="calendar-check" class="w-5 h-5 text-cyan-400"></i>
                     </div>
                     <span class="text-xs text-green-400 font-medium flex items-center gap-1">
-                        <i data-lucide="trending-up" class="w-3 h-3"></i> +18.7%
+                        <i data-lucide="trending-up" class="w-3 h-3"></i> Today
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">342</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.today?.toLocaleString() || '0'"></h3>
                 <p class="text-gray-400 text-sm mt-1">Today</p>
             </div>
 
@@ -366,10 +282,10 @@
                         <i data-lucide="calendar-range" class="w-5 h-5 text-green-400"></i>
                     </div>
                     <span class="text-xs text-green-400 font-medium flex items-center gap-1">
-                        <i data-lucide="trending-up" class="w-3 h-3"></i> +12.4%
+                        <i data-lucide="trending-up" class="w-3 h-3"></i> This week
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">2,456</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.this_week?.toLocaleString() || '0'"></h3>
                 <p class="text-gray-400 text-sm mt-1">This Week</p>
             </div>
 
@@ -381,7 +297,7 @@
                     </div>
                     <span class="text-xs bg-red-500/20 text-red-400 font-medium px-2 py-0.5 rounded-full">Review</span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">12</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.critical || '0'"></h3>
                 <p class="text-gray-400 text-sm mt-1">Critical Events</p>
             </div>
         </div>
@@ -392,13 +308,13 @@
                 <!-- Search -->
                 <div class="relative">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
-                    <input type="text" x-model="search" placeholder="Search logs, IPs, details..."
+                    <input type="text" x-model="search" @input.debounce.500ms="fetchLogs()" placeholder="Search logs, IPs, details..."
                            class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none placeholder-gray-500">
                 </div>
 
                 <!-- Action Type -->
                 <div class="relative">
-                    <select x-model="actionFilter" class="w-full bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none">
+                    <select x-model="actionFilter" @change="currentPage = 1; fetchLogs()" class="w-full bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none">
                         <option value="all">All Actions</option>
                         <option value="login">Login</option>
                         <option value="deposit">Deposit</option>
@@ -441,7 +357,7 @@
                         <button @click="adminFilter = ''" class="hover:text-white">&times;</button>
                     </span>
                 </div>
-                <button @click="search = ''; actionFilter = 'all'; dateFrom = ''; dateTo = ''; adminFilter = ''; currentPage = 1"
+                <button @click="search = ''; actionFilter = 'all'; dateFrom = ''; dateTo = ''; adminFilter = ''; currentPage = 1; fetchLogs()"
                         class="text-xs text-gray-400 hover:text-white transition-colors">Clear all</button>
             </div>
         </div>
@@ -462,36 +378,36 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-800">
-                        <template x-for="log in pagedLogs" :key="log.id">
+                        <template x-for="log in logs" :key="log.id">
                             <tr @click="openDetail(log)" class="hover:bg-gray-800/50 transition-colors cursor-pointer">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" :class="severityDotClass(log.severity)"></span>
-                                        <span class="text-sm text-gray-300 whitespace-nowrap" x-text="log.timestamp"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" :class="severityDotClass(log.severity || 'info')"></span>
+                                        <span class="text-sm text-gray-300 whitespace-nowrap" x-text="formatDateTime(log.created_at)"></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-2">
                                         <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                                             :class="log.admin.includes('System') ? 'bg-gray-600 text-gray-200' : 'bg-gradient-to-br from-primary-500 to-cyan-500 text-white'"
-                                             x-text="log.admin.includes('System') ? 'SY' : log.admin.split(' ')[0][0] + (log.admin.split(' ')[1] ? log.admin.split(' ')[1][0] : '')"></div>
-                                        <span class="text-sm text-gray-300" x-text="log.admin"></span>
+                                             :class="!log.user ? 'bg-gray-600 text-gray-200' : 'bg-gradient-to-br from-primary-500 to-cyan-500 text-white'"
+                                             x-text="!log.user ? 'SY' : getInitials(log.user?.name)"></div>
+                                        <span class="text-sm text-gray-300" x-text="log.user?.name || 'System'"></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full" :class="actionBadgeClass(log.action)" x-text="log.action"></span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <p class="text-sm text-gray-400 max-w-xs truncate" x-text="log.details" :title="log.details"></p>
+                                    <p class="text-sm text-gray-400 max-w-xs truncate" x-text="log.description" :title="log.description"></p>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="text-sm text-gray-400 font-mono" x-text="log.ip"></span>
+                                    <span class="text-sm text-gray-400 font-mono" x-text="log.ip_address"></span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="text-xs text-gray-500" x-text="log.browser"></span>
+                                    <span class="text-xs text-gray-500" x-text="log.user_agent?.substring(0, 30) || '-'"></span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="text-xs font-medium px-2.5 py-1 rounded-full" :class="statusBadgeClass(log.status)" x-text="log.status"></span>
+                                    <span class="text-xs font-medium px-2.5 py-1 rounded-full" :class="statusBadgeClass('Success')" x-text="log.action || 'Info'"></span>
                                 </td>
                             </tr>
                         </template>
@@ -500,33 +416,33 @@
             </div>
 
             <!-- Empty state -->
-            <div x-show="filteredLogs.length === 0" class="px-6 py-12 text-center">
+            <div x-show="logs.length === 0" class="px-6 py-12 text-center">
                 <i data-lucide="file-search" class="w-12 h-12 text-gray-600 mx-auto mb-3"></i>
                 <p class="text-gray-400 text-sm">No logs match your current filters.</p>
-                <button @click="search = ''; actionFilter = 'all'; dateFrom = ''; dateTo = ''; adminFilter = ''; currentPage = 1"
+                <button @click="search = ''; actionFilter = 'all'; dateFrom = ''; dateTo = ''; adminFilter = ''; currentPage = 1; fetchLogs()"
                         class="mt-3 text-sm text-primary-400 hover:text-primary-300 font-medium">Reset filters</button>
             </div>
 
             <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3" x-show="filteredLogs.length > 0">
+            <div class="px-6 py-4 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3" x-show="totalResults > 0">
                 <p class="text-sm text-gray-400">
                     Showing <span class="font-medium text-gray-200" x-text="((currentPage - 1) * perPage) + 1"></span>
-                    to <span class="font-medium text-gray-200" x-text="Math.min(currentPage * perPage, filteredLogs.length)"></span>
-                    of <span class="font-medium text-gray-200" x-text="filteredLogs.length"></span> results
+                    to <span class="font-medium text-gray-200" x-text="Math.min(currentPage * perPage, totalResults)"></span>
+                    of <span class="font-medium text-gray-200" x-text="totalResults"></span> results
                 </p>
                 <div class="flex items-center gap-1">
-                    <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
+                    <button @click="currentPage = Math.max(1, currentPage - 1); fetchLogs()" :disabled="currentPage === 1"
                             class="px-3 py-1.5 text-sm rounded-lg border border-gray-700 transition-colors"
                             :class="currentPage === 1 ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 hover:bg-gray-800 hover:text-white'">
                         <i data-lucide="chevron-left" class="w-4 h-4"></i>
                     </button>
                     <template x-for="page in totalPages" :key="page">
-                        <button @click="currentPage = page"
+                        <button @click="currentPage = page; fetchLogs()"
                                 class="w-8 h-8 text-sm rounded-lg font-medium transition-colors"
                                 :class="currentPage === page ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
                                 x-text="page"></button>
                     </template>
-                    <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages"
+                    <button @click="currentPage = Math.min(totalPages, currentPage + 1); fetchLogs()" :disabled="currentPage === totalPages"
                             class="px-3 py-1.5 text-sm rounded-lg border border-gray-700 transition-colors"
                             :class="currentPage === totalPages ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 hover:bg-gray-800 hover:text-white'">
                         <i data-lucide="chevron-right" class="w-4 h-4"></i>
@@ -555,7 +471,7 @@
                         </div>
                         <div>
                             <h3 class="text-sm font-semibold text-white">Log Detail</h3>
-                            <p class="text-xs text-gray-500" x-text="selectedLog ? selectedLog.id : ''"></p>
+                            <p class="text-xs text-gray-500" x-text="selectedLog ? '#' + selectedLog.id : ''"></p>
                         </div>
                     </div>
                     <button @click="detailOpen = false" class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors">
@@ -581,13 +497,13 @@
                     <!-- Timestamp -->
                     <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
                         <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Timestamp</p>
-                        <p class="text-sm text-white font-mono" x-text="selectedLog?.timestamp"></p>
+                        <p class="text-sm text-white font-mono" x-text="formatDateTime(selectedLog?.created_at)"></p>
                     </div>
 
                     <!-- Details -->
                     <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
                         <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Description</p>
-                        <p class="text-sm text-gray-200 leading-relaxed" x-text="selectedLog?.details"></p>
+                        <p class="text-sm text-gray-200 leading-relaxed" x-text="selectedLog?.description"></p>
                     </div>
 
                     <!-- Admin Info -->
@@ -595,11 +511,11 @@
                         <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Performed By</p>
                         <div class="flex items-center gap-3 mt-2">
                             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-                                 :class="selectedLog?.admin?.includes('System') ? 'bg-gray-600 text-gray-200' : 'bg-gradient-to-br from-primary-500 to-cyan-500 text-white'"
-                                 x-text="selectedLog?.admin?.includes('System') ? 'SY' : selectedLog?.admin?.split(' ')[0][0] + (selectedLog?.admin?.split(' ')[1] ? selectedLog?.admin?.split(' ')[1][0] : '')"></div>
+                                 :class="!selectedLog?.user ? 'bg-gray-600 text-gray-200' : 'bg-gradient-to-br from-primary-500 to-cyan-500 text-white'"
+                                 x-text="!selectedLog?.user ? 'SY' : getInitials(selectedLog?.user?.name)"></div>
                             <div>
-                                <p class="text-sm font-medium text-white" x-text="selectedLog?.admin"></p>
-                                <p class="text-xs text-gray-500" x-text="selectedLog?.admin?.includes('System') ? 'Automated Process' : 'Administrator'"></p>
+                                <p class="text-sm font-medium text-white" x-text="selectedLog?.user?.name || 'System'"></p>
+                                <p class="text-xs text-gray-500" x-text="selectedLog?.user?.email || 'Automated Process'"></p>
                             </div>
                         </div>
                     </div>
@@ -610,11 +526,11 @@
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-400">IP Address</span>
-                                <span class="text-sm text-gray-200 font-mono" x-text="selectedLog?.ip"></span>
+                                <span class="text-sm text-gray-200 font-mono" x-text="selectedLog?.ip_address"></span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-400">Browser / OS</span>
-                                <span class="text-sm text-gray-200" x-text="selectedLog?.browser"></span>
+                                <span class="text-sm text-gray-200" x-text="selectedLog?.user_agent?.substring(0, 40) || '-'"></span>
                             </div>
                         </div>
                     </div>
@@ -653,6 +569,87 @@
 </div>
 
 <script>
+    function logsApp() {
+        return {
+            search: '',
+            actionFilter: 'all',
+            dateFrom: '',
+            dateTo: '',
+            adminFilter: '',
+            currentPage: 1,
+            perPage: 15,
+            totalPages: 1,
+            totalResults: 0,
+            detailOpen: false,
+            selectedLog: null,
+            logs: [],
+            stats: { total: 0, today: 0, this_week: 0, critical: 0 },
+            loading: false,
+
+            async init() {
+                await this.fetchStats();
+                await this.fetchLogs();
+                this.$nextTick(() => lucide.createIcons());
+            },
+
+            async fetchStats() {
+                const d = await apiGet('/admin/audit-logs-stats');
+                if (d) this.stats = d;
+            },
+
+            async fetchLogs() {
+                this.loading = true;
+                const actionParam = this.actionFilter === 'all' ? '' : this.actionFilter;
+                const searchParam = this.search || '';
+                const d = await apiGet(`/admin/audit-logs?page=${this.currentPage}&action=${actionParam}&search=${encodeURIComponent(searchParam)}`);
+                if (d) {
+                    this.logs = d.data || [];
+                    this.totalPages = d.last_page || 1;
+                    this.totalResults = d.total || 0;
+                }
+                this.loading = false;
+                this.$nextTick(() => lucide.createIcons());
+            },
+
+            openDetail(log) {
+                this.selectedLog = log;
+                this.detailOpen = true;
+            },
+
+            actionBadgeClass(action) {
+                const map = {
+                    'login': 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+                    'Login': 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+                    'deposit': 'bg-green-500/15 text-green-400 border border-green-500/30',
+                    'Deposit': 'bg-green-500/15 text-green-400 border border-green-500/30',
+                    'withdrawal': 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30',
+                    'Withdrawal': 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30',
+                    'trade': 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
+                    'Trade': 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
+                    'settings': 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+                    'Settings': 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+                    'user_mgmt': 'bg-red-500/15 text-red-400 border border-red-500/30',
+                    'User Mgmt': 'bg-red-500/15 text-red-400 border border-red-500/30',
+                };
+                return map[action] || 'bg-gray-500/15 text-gray-400';
+            },
+
+            statusBadgeClass(status) {
+                const map = {
+                    'Success': 'bg-green-500/10 text-green-400',
+                    'Failed': 'bg-red-500/10 text-red-400',
+                    'Rejected': 'bg-yellow-500/10 text-yellow-400',
+                    'Reversed': 'bg-orange-500/10 text-orange-400',
+                };
+                return map[status] || 'bg-gray-500/10 text-gray-400';
+            },
+
+            severityDotClass(severity) {
+                const map = { success: 'bg-green-400', info: 'bg-blue-400', warning: 'bg-yellow-400', critical: 'bg-red-400 animate-pulse' };
+                return map[severity] || 'bg-blue-400';
+            }
+        };
+    }
     document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
     document.addEventListener('alpine:updated', () => { lucide.createIcons(); });
 </script>

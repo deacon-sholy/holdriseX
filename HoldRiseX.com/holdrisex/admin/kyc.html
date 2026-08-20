@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algo Trading - KYC Verification</title>
+    <title>HoldRiseX - KYC Verification</title>
+    <link href="../favicon.svg" rel="icon" type="image/svg+xml" />
     <link rel="shortcut icon" href="../storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +26,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="api.js"></script>
     <style>
         [x-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 6px; }
@@ -39,7 +41,7 @@
         .stat-card { transition: all 0.3s ease; }
     </style>
 </head>
-<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="kycApp()">
+<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="kycApp()" x-init="requireAuth()">
 
 <!-- Mobile sidebar overlay -->
 <div x-show="mobileSidebar" x-cloak @click="mobileSidebar = false"
@@ -103,7 +105,7 @@
         <a href="kyc.html" class="sidebar-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300">
             <i data-lucide="file-check" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">KYC Verification</span>
-            <span class="ml-auto bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full font-medium" x-show="sidebarOpen">3</span>
+            <span class="ml-auto bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full font-medium" x-show="sidebarOpen && stats.pending > 0" x-text="stats.pending"></span>
         </a>
 
         <p class="px-3 mb-3 mt-6 text-xs font-semibold text-gray-500 uppercase tracking-wider" x-show="sidebarOpen">System</p>
@@ -123,7 +125,7 @@
 
     <!-- Bottom -->
     <div class="p-3 border-t border-gray-800">
-        <a href="login.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
+        <a href="login.html" @click="clearAuthToken()" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
             <i data-lucide="log-out" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">Logout</span>
         </a>
@@ -201,9 +203,9 @@
                 <!-- Admin Profile -->
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800 transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">A</div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold" x-text="getAdminUser() ? getAdminUser().name.charAt(0) : 'A'"></div>
                         <div class="hidden sm:block text-left">
-                            <p class="text-sm font-medium text-white leading-tight">Admin</p>
+                            <p class="text-sm font-medium text-white leading-tight" x-text="getAdminUser() ? getAdminUser().name : 'Admin'"></p>
                             <p class="text-xs text-gray-400">Super Admin</p>
                         </div>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
@@ -260,7 +262,7 @@
                         <i data-lucide="trending-up" class="w-3 h-3"></i> +12.5%
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">234</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.total"></h3>
                 <p class="text-gray-400 text-sm mt-1">Total Submitted</p>
             </div>
 
@@ -272,7 +274,7 @@
                     </div>
                     <span class="text-xs bg-yellow-500/20 text-yellow-400 font-medium px-2 py-0.5 rounded-full">Action needed</span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">3</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.pending"></h3>
                 <p class="text-gray-400 text-sm mt-1">Pending</p>
             </div>
 
@@ -286,7 +288,7 @@
                         <i data-lucide="trending-up" class="w-3 h-3"></i> +8.2%
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">218</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.verified"></h3>
                 <p class="text-gray-400 text-sm mt-1">Verified</p>
             </div>
 
@@ -300,7 +302,7 @@
                         <i data-lucide="trending-down" class="w-3 h-3"></i> -3.1%
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">13</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.rejected"></h3>
                 <p class="text-gray-400 text-sm mt-1">Rejected</p>
             </div>
         </div>
@@ -314,7 +316,7 @@
                            class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none placeholder-gray-500">
                 </div>
                 <div class="flex items-center gap-3">
-                    <select x-model="statusFilter" class="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg px-3 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                    <select x-model="statusFilter" @change="setStatusFilter(statusFilter)" class="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg px-3 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none">
                         <option value="all">All Status</option>
                         <option value="pending">Pending</option>
                         <option value="under_review">Under Review</option>
@@ -408,21 +410,21 @@
             <!-- Pagination -->
             <div class="px-6 py-4 border-t border-gray-800 flex items-center justify-between">
                 <p class="text-xs text-gray-500">
-                    Showing <span class="text-gray-300" x-text="((currentPage - 1) * perPage) + 1"></span> to <span class="text-gray-300" x-text="Math.min(currentPage * perPage, filteredKycData.length)"></span> of <span class="text-gray-300" x-text="filteredKycData.length"></span> results
+                    Showing <span class="text-gray-300" x-text="((currentPage - 1) * perPage) + 1"></span> to <span class="text-gray-300" x-text="Math.min(currentPage * perPage, totalResults)"></span> of <span class="text-gray-300" x-text="totalResults"></span> results
                 </p>
                 <div class="flex items-center gap-1">
-                    <button @click="currentPage > 1 && currentPage--"
+                    <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
                             class="px-3 py-1.5 text-xs rounded-lg border transition-colors"
                             :class="currentPage === 1 ? 'border-gray-800 text-gray-600 cursor-not-allowed' : 'border-gray-700 text-gray-300 hover:bg-gray-800'">
                         Prev
                     </button>
                     <template x-for="page in totalPages" :key="page">
-                        <button @click="currentPage = page"
+                        <button @click="goToPage(page)"
                                 class="w-8 h-8 text-xs rounded-lg font-medium transition-colors"
                                 :class="currentPage === page ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800'"
                                 x-text="page"></button>
                     </template>
-                    <button @click="currentPage < totalPages && currentPage++"
+                    <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages"
                             class="px-3 py-1.5 text-xs rounded-lg border transition-colors"
                             :class="currentPage === totalPages ? 'border-gray-800 text-gray-600 cursor-not-allowed' : 'border-gray-700 text-gray-300 hover:bg-gray-800'">
                         Next
@@ -639,230 +641,73 @@ function kycApp() {
         statusFilter: 'all',
         docTypeFilter: 'all',
         currentPage: 1,
-        perPage: 8,
+        perPage: 15,
+        totalPages: 1,
+        totalResults: 0,
         showDetailModal: false,
         showRejectModal: false,
         selectedKyc: null,
         rejectKyc: null,
         rejectReason: '',
         rejectNotes: '',
+        loading: false,
+        stats: { total: 0, pending: 0, verified: 0, rejected: 0 },
+        kycData: [],
 
-        kycData: [
-            {
-                id: '10234',
-                name: 'James Carter',
-                email: 'james.carter@email.com',
-                initials: 'JC',
-                avatarClass: 'bg-gradient-to-br from-blue-500 to-indigo-700',
-                userId: 'USR-00482',
-                docType: 'ID Card',
-                docIcon: 'credit-card',
-                docNumber: 'A7294851',
-                dob: '1992-06-15',
-                country: 'United States',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Back',
-                submitted: 'Aug 15, 2026',
-                status: 'Pending'
-            },
-            {
-                id: '10233',
-                name: 'Sarah Mitchell',
-                email: 'sarah.m@email.com',
-                initials: 'SM',
-                avatarClass: 'bg-gradient-to-br from-purple-500 to-pink-700',
-                userId: 'USR-00391',
-                docType: 'Passport',
-                docIcon: 'book-open',
-                docNumber: 'P3829105',
-                dob: '1988-03-22',
-                country: 'United Kingdom',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=Passport+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=Passport+Back',
-                submitted: 'Aug 14, 2026',
-                status: 'Pending'
-            },
-            {
-                id: '10232',
-                name: 'Michael Brown',
-                email: 'michael.b@email.com',
-                initials: 'MB',
-                avatarClass: 'bg-gradient-to-br from-green-500 to-emerald-700',
-                userId: 'USR-00512',
-                docType: 'Driver License',
-                docIcon: 'car',
-                docNumber: 'DL-99281',
-                dob: '1995-11-08',
-                country: 'Canada',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=DL+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=DL+Back',
-                submitted: 'Aug 14, 2026',
-                status: 'Under Review'
-            },
-            {
-                id: '10231',
-                name: 'Lisa Park',
-                email: 'lisa.park@email.com',
-                initials: 'LP',
-                avatarClass: 'bg-gradient-to-br from-yellow-500 to-orange-700',
-                userId: 'USR-00156',
-                docType: 'ID Card',
-                docIcon: 'credit-card',
-                docNumber: 'C4827361',
-                dob: '1990-07-30',
-                country: 'South Korea',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Back',
-                submitted: 'Aug 13, 2026',
-                status: 'Verified'
-            },
-            {
-                id: '10230',
-                name: 'David Kim',
-                email: 'david.kim@email.com',
-                initials: 'DK',
-                avatarClass: 'bg-gradient-to-br from-cyan-500 to-blue-700',
-                userId: 'USR-00284',
-                docType: 'Passport',
-                docIcon: 'book-open',
-                docNumber: 'P7102938',
-                dob: '1985-01-12',
-                country: 'South Korea',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=Passport+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=Passport+Back',
-                submitted: 'Aug 12, 2026',
-                status: 'Verified'
-            },
-            {
-                id: '10229',
-                name: 'Emma Wilson',
-                email: 'emma.w@email.com',
-                initials: 'EW',
-                avatarClass: 'bg-gradient-to-br from-red-500 to-rose-700',
-                userId: 'USR-00637',
-                docType: 'ID Card',
-                docIcon: 'credit-card',
-                docNumber: 'B8392017',
-                dob: '1993-09-05',
-                country: 'Australia',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Back',
-                submitted: 'Aug 11, 2026',
-                status: 'Rejected',
-                rejectReason: 'Document appears altered. Please re-upload a clear, unedited photo of your original document.'
-            },
-            {
-                id: '10228',
-                name: 'Robert Johnson',
-                email: 'robert.j@email.com',
-                initials: 'RJ',
-                avatarClass: 'bg-gradient-to-br from-emerald-500 to-teal-700',
-                userId: 'USR-00419',
-                docType: 'Driver License',
-                docIcon: 'car',
-                docNumber: 'DL-71824',
-                dob: '1991-12-18',
-                country: 'United States',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=DL+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=DL+Back',
-                submitted: 'Aug 10, 2026',
-                status: 'Verified'
-            },
-            {
-                id: '10227',
-                name: 'Nina Garcia',
-                email: 'nina.g@email.com',
-                initials: 'NG',
-                avatarClass: 'bg-gradient-to-br from-pink-500 to-fuchsia-700',
-                userId: 'USR-00748',
-                docType: 'Passport',
-                docIcon: 'book-open',
-                docNumber: 'P5029381',
-                dob: '1987-04-25',
-                country: 'Spain',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=Passport+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=Passport+Back',
-                submitted: 'Aug 9, 2026',
-                status: 'Verified'
-            },
-            {
-                id: '10226',
-                name: 'Alex Turner',
-                email: 'alex.t@email.com',
-                initials: 'AT',
-                avatarClass: 'bg-gradient-to-br from-orange-500 to-amber-700',
-                userId: 'USR-00305',
-                docType: 'ID Card',
-                docIcon: 'credit-card',
-                docNumber: 'D2837461',
-                dob: '1994-08-02',
-                country: 'Germany',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Back',
-                submitted: 'Aug 8, 2026',
-                status: 'Rejected',
-                rejectReason: 'Document is expired. Please upload a valid, non-expired document.'
-            },
-            {
-                id: '10225',
-                name: 'Priya Patel',
-                email: 'priya.p@email.com',
-                initials: 'PP',
-                avatarClass: 'bg-gradient-to-br from-violet-500 to-purple-700',
-                userId: 'USR-00892',
-                docType: 'Driver License',
-                docIcon: 'car',
-                docNumber: 'DL-50293',
-                dob: '1996-02-14',
-                country: 'India',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=DL+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=DL+Back',
-                submitted: 'Aug 7, 2026',
-                status: 'Verified'
-            },
-            {
-                id: '10224',
-                name: 'Tom Williams',
-                email: 'tom.w@email.com',
-                initials: 'TW',
-                avatarClass: 'bg-gradient-to-br from-teal-500 to-cyan-700',
-                userId: 'USR-00167',
-                docType: 'ID Card',
-                docIcon: 'credit-card',
-                docNumber: 'E9281037',
-                dob: '1989-06-28',
-                country: 'New Zealand',
-                frontDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Front',
-                backDoc: 'https://placehold.co/400x250/1e293b/94a3b8?text=ID+Back',
-                submitted: 'Aug 6, 2026',
-                status: 'Pending'
+        async init() {
+            await this.fetchStats();
+            await this.fetchKyc();
+            this.$nextTick(() => lucide.createIcons());
+        },
+
+        async fetchStats() {
+            const d = await apiGet('/admin/kyc-stats');
+            if (d) this.stats = d;
+        },
+
+        async fetchKyc() {
+            this.loading = true;
+            const statusParam = this.statusFilter === 'all' ? '' : this.statusFilter;
+            const d = await apiGet(`/admin/kyc?page=${this.currentPage}&status=${statusParam}`);
+            if (d) {
+                this.kycData = d.data.map(k => ({
+                    ...k,
+                    name: k.user?.name || '',
+                    email: k.user?.email || '',
+                    initials: getInitials(k.user?.name),
+                    avatarClass: 'bg-gradient-to-br ' + getAvatarColor(k.user?.name),
+                    docType: k.document_type?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) || '',
+                    docIcon: k.document_type === 'passport' ? 'book-open' : k.document_type === 'drivers_license' ? 'car' : 'credit-card',
+                    frontDoc: k.document_url || 'https://placehold.co/400x250/1e293b/94a3b8?text=Document',
+                    backDoc: k.document_url || 'https://placehold.co/400x250/1e293b/94a3b8?text=Document',
+                    submitted: formatDate(k.created_at),
+                    status: k.status?.charAt(0).toUpperCase() + k.status?.slice(1) || '',
+                    rejectReason: k.admin_note || ''
+                }));
+                this.totalPages = d.last_page || 1;
+                this.totalResults = d.total || 0;
             }
-        ],
+            this.loading = false;
+            this.$nextTick(() => lucide.createIcons());
+        },
 
         get filteredKycData() {
             let data = this.kycData;
-            if (this.statusFilter !== 'all') {
-                const statusMap = { pending: 'Pending', under_review: 'Under Review', verified: 'Verified', rejected: 'Rejected' };
-                data = data.filter(k => k.status === statusMap[this.statusFilter]);
-            }
-            if (this.docTypeFilter !== 'all') {
-                const docMap = { id_card: 'ID Card', passport: 'Passport', drivers_license: 'Driver License' };
-                data = data.filter(k => k.docType === docMap[this.docTypeFilter]);
-            }
             if (this.searchQuery.trim()) {
                 const q = this.searchQuery.toLowerCase();
-                data = data.filter(k => k.name.toLowerCase().includes(q) || k.email.toLowerCase().includes(q) || k.id.includes(q));
+                data = data.filter(k => k.name.toLowerCase().includes(q) || k.email.toLowerCase().includes(q) || String(k.id).includes(q));
             }
             return data;
         },
 
-        get totalPages() {
-            return Math.max(1, Math.ceil(this.filteredKycData.length / this.perPage));
-        },
-
-        approveKyc(kyc) {
-            if (kyc) kyc.status = 'Verified';
-            this.showDetailModal = false;
+        async approveKyc(kyc) {
+            if (!kyc) return;
+            const res = await apiPost(`/admin/kyc/${kyc.id}/approve`);
+            if (res) {
+                kyc.status = 'Verified';
+                this.showDetailModal = false;
+                await this.fetchStats();
+            }
             this.$nextTick(() => lucide.createIcons());
         },
 
@@ -880,13 +725,30 @@ function kycApp() {
             this.$nextTick(() => lucide.createIcons());
         },
 
-        confirmReject() {
+        async confirmReject() {
             if (this.rejectKyc && this.rejectReason) {
-                this.rejectKyc.status = 'Rejected';
-                this.rejectKyc.rejectReason = this.rejectReason + (this.rejectNotes ? ' ' + this.rejectNotes : '');
+                const note = this.rejectReason + (this.rejectNotes ? ' ' + this.rejectNotes : '');
+                const res = await apiPost(`/admin/kyc/${this.rejectKyc.id}/reject`, { admin_note: note });
+                if (res) {
+                    this.rejectKyc.status = 'Rejected';
+                    this.rejectKyc.rejectReason = note;
+                    await this.fetchStats();
+                }
             }
             this.showRejectModal = false;
             this.$nextTick(() => lucide.createIcons());
+        },
+
+        async setStatusFilter(val) {
+            this.statusFilter = val;
+            this.currentPage = 1;
+            await this.fetchKyc();
+        },
+
+        async goToPage(page) {
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+            await this.fetchKyc();
         }
     }
 }

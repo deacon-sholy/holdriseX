@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algo Trading - Copy Trading</title>
+    <title>HoldRiseX - Copy Trading</title>
+    <link href="../favicon.svg" rel="icon" type="image/svg+xml" />
     <link rel="shortcut icon" href="../storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +26,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="api.js"></script>
     <style>
         [x-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 6px; }
@@ -41,7 +43,7 @@
         .trader-card { transition: all 0.3s ease; }
     </style>
 </head>
-<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="{ sidebarOpen: true, mobileSidebar: false }">
+<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="{ sidebarOpen: true, mobileSidebar: false }" x-init="requireAuth()">
 
 <!-- Mobile sidebar overlay -->
 <div x-show="mobileSidebar" x-cloak @click="mobileSidebar = false"
@@ -203,9 +205,9 @@
                 <!-- Admin Profile -->
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800 transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">A</div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold" x-text="getAdminUser()?.name ? getAdminUser().name.charAt(0).toUpperCase() : 'A'"></div>
                         <div class="hidden sm:block text-left">
-                            <p class="text-sm font-medium text-white leading-tight">Admin</p>
+                            <p class="text-sm font-medium text-white leading-tight" x-text="getAdminUser()?.name || 'Admin'"></p>
                             <p class="text-xs text-gray-400">Super Admin</p>
                         </div>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
@@ -226,13 +228,45 @@
     </header>
 
     <!-- Page Content -->
-    <main class="p-4 sm:p-6 lg:p-8">
+    <main class="p-4 sm:p-6 lg:p-8" x-data="{
+        traders: [],
+        activities: [],
+        loading: true,
+        async fetchData() {
+            this.loading = true;
+            const [tradersRes, activityRes] = await Promise.all([
+                apiGet('/admin/copy-traders'),
+                apiGet('/admin/copy-trading/activity')
+            ]);
+            if (Array.isArray(tradersRes)) this.traders = tradersRes;
+            if (Array.isArray(activityRes)) this.activities = activityRes;
+            this.loading = false;
+            this.$nextTick(() => { lucide.createIcons(); });
+        },
+        get totalTraders() { return this.traders.length; },
+        get activeTraders() { return this.traders.filter(t => t.is_active).length; },
+        get totalCopied() { return this.traders.reduce((sum, t) => sum + (t.total_copied || 0), 0); },
+        async toggleTrader(trader) {
+            await apiPut('/admin/copy-traders/' + trader.id, { is_active: !trader.is_active });
+            await this.fetchData();
+        },
+        riskColor(level) {
+            if (level === 'Low') return 'bg-green-500/10 text-green-400';
+            if (level === 'Medium') return 'bg-yellow-500/10 text-yellow-400';
+            return 'bg-red-500/10 text-red-400';
+        },
+        statusColor(status) {
+            if (status === 'Closed') return 'bg-green-500/10 text-green-400';
+            if (status === 'Pending') return 'bg-yellow-500/10 text-yellow-400';
+            return 'bg-red-500/10 text-red-400';
+        }
+    }" x-init="$nextTick(() => fetchData())">
 
         <!-- Page Header -->
         <div class="mb-8 animate-fade-in">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <p class="text-primary-400 text-sm font-medium mb-1">Algo Trading - Copy Trading</p>
+                    <p class="text-primary-400 text-sm font-medium mb-1">HoldRiseX - Copy Trading</p>
                     <h1 class="text-2xl font-bold text-white">Copy Trading Management</h1>
                 </div>
                 <div class="flex items-center gap-3">
@@ -258,26 +292,20 @@
                     <div class="w-10 h-10 rounded-lg bg-primary-600/20 flex items-center justify-center">
                         <i data-lucide="copy" class="w-5 h-5 text-primary-400"></i>
                     </div>
-                    <span class="text-xs text-green-400 font-medium flex items-center gap-1">
-                        <i data-lucide="trending-up" class="w-3 h-3"></i> +6.2%
-                    </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">48</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="totalTraders"></h3>
                 <p class="text-gray-400 text-sm mt-1">Total Traders</p>
             </div>
 
-            <!-- Active Copiers -->
+            <!-- Active Traders -->
             <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-5 cursor-pointer">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-10 h-10 rounded-lg bg-green-600/20 flex items-center justify-center">
                         <i data-lucide="users" class="w-5 h-5 text-green-400"></i>
                     </div>
-                    <span class="text-xs text-green-400 font-medium flex items-center gap-1">
-                        <i data-lucide="trending-up" class="w-3 h-3"></i> +12.8%
-                    </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">1,892</h3>
-                <p class="text-gray-400 text-sm mt-1">Active Copiers</p>
+                <h3 class="text-2xl font-bold text-white" x-text="activeTraders"></h3>
+                <p class="text-gray-400 text-sm mt-1">Active Traders</p>
             </div>
 
             <!-- Total Copied Trades -->
@@ -286,11 +314,8 @@
                     <div class="w-10 h-10 rounded-lg bg-cyan-600/20 flex items-center justify-center">
                         <i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i>
                     </div>
-                    <span class="text-xs text-green-400 font-medium flex items-center gap-1">
-                        <i data-lucide="trending-up" class="w-3 h-3"></i> +18.5%
-                    </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">12,456</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="totalCopied.toLocaleString()"></h3>
                 <p class="text-gray-400 text-sm mt-1">Total Copied Trades</p>
             </div>
 
@@ -300,11 +325,8 @@
                     <div class="w-10 h-10 rounded-lg bg-yellow-600/20 flex items-center justify-center">
                         <i data-lucide="dollar-sign" class="w-5 h-5 text-yellow-400"></i>
                     </div>
-                    <span class="text-xs text-green-400 font-medium flex items-center gap-1">
-                        <i data-lucide="trending-up" class="w-3 h-3"></i> +22.1%
-                    </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">$892K</h3>
+                <h3 class="text-2xl font-bold text-white">--</h3>
                 <p class="text-gray-400 text-sm mt-1">Profit Distributed</p>
             </div>
         </div>
@@ -329,287 +351,55 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <!-- Trader Card 1 -->
-                <div class="trader-card bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-white text-sm font-bold">AM</div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">Alex Morgan</h3>
-                                <p class="text-xs text-gray-400">Forex Specialist</p>
+                <template x-for="trader in traders" :key="trader.id">
+                    <div class="trader-card bg-gray-900 border border-gray-800 rounded-xl p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-sm font-bold" :class="getAvatarColor(trader.name)" x-text="getInitials(trader.name)"></div>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-white" x-text="trader.name"></h3>
+                                    <p class="text-xs text-gray-400" x-text="trader.specialty"></p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-medium px-2.5 py-1 rounded-full"
+                                  :class="trader.is_active ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'"
+                                  x-text="trader.is_active ? 'Active' : 'Inactive'"></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500">Win Rate</p>
+                                <p class="text-lg font-bold text-green-400" x-text="(trader.win_rate || 0) + '%'"></p>
+                            </div>
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500">Monthly Return</p>
+                                <p class="text-lg font-bold text-primary-400" x-text="'+' + (trader.monthly_return || 0) + '%'"></p>
+                            </div>
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500">Copied By</p>
+                                <p class="text-lg font-bold text-white" x-text="trader.total_copied || 0"></p>
+                            </div>
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500">AUM</p>
+                                <p class="text-lg font-bold text-white" x-text="'$' + (trader.aum || 0)"></p>
                             </div>
                         </div>
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Active</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Win Rate</p>
-                            <p class="text-lg font-bold text-green-400">78.5%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Monthly Return</p>
-                            <p class="text-lg font-bold text-primary-400">+14.2%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Followers</p>
-                            <p class="text-lg font-bold text-white">412</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">AUM</p>
-                            <p class="text-lg font-bold text-white">$2.4M</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Low Risk</span>
-                        <div x-data="{ enabled: true }" class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" :checked="enabled" @click="enabled = !enabled" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> View
-                        </button>
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/30 text-primary-400 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Trader Card 2 -->
-                <div class="trader-card bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-700 flex items-center justify-center text-white text-sm font-bold">SC</div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">Sarah Chen</h3>
-                                <p class="text-xs text-gray-400">Crypto Specialist</p>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-medium px-2.5 py-1 rounded-full" :class="riskColor(trader.risk_level)" x-text="trader.risk_level + ' Risk'"></span>
+                            <div class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" :checked="trader.is_active" @click="toggleTrader(trader)" class="sr-only peer">
+                                <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
                             </div>
                         </div>
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Active</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Win Rate</p>
-                            <p class="text-lg font-bold text-green-400">82.1%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Monthly Return</p>
-                            <p class="text-lg font-bold text-primary-400">+21.8%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Followers</p>
-                            <p class="text-lg font-bold text-white">634</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">AUM</p>
-                            <p class="text-lg font-bold text-white">$5.1M</p>
+                        <div class="flex items-center gap-2">
+                            <button class="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i> View
+                            </button>
+                            <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/30 text-primary-400 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                            </button>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400">Medium Risk</span>
-                        <div x-data="{ enabled: true }" class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" :checked="enabled" @click="enabled = !enabled" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> View
-                        </button>
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/30 text-primary-400 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Trader Card 3 -->
-                <div class="trader-card bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-white text-sm font-bold">JR</div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">James Rodriguez</h3>
-                                <p class="text-xs text-gray-400">Mixed Portfolio</p>
-                            </div>
-                        </div>
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Active</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Win Rate</p>
-                            <p class="text-lg font-bold text-green-400">71.3%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Monthly Return</p>
-                            <p class="text-lg font-bold text-primary-400">+9.7%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Followers</p>
-                            <p class="text-lg font-bold text-white">287</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">AUM</p>
-                            <p class="text-lg font-bold text-white">$1.8M</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Low Risk</span>
-                        <div x-data="{ enabled: true }" class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" :checked="enabled" @click="enabled = !enabled" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> View
-                        </button>
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/30 text-primary-400 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Trader Card 4 -->
-                <div class="trader-card bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-700 flex items-center justify-center text-white text-sm font-bold">EW</div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">Emily Watson</h3>
-                                <p class="text-xs text-gray-400">Forex Specialist</p>
-                            </div>
-                        </div>
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Active</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Win Rate</p>
-                            <p class="text-lg font-bold text-green-400">69.8%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Monthly Return</p>
-                            <p class="text-lg font-bold text-primary-400">+11.5%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Followers</p>
-                            <p class="text-lg font-bold text-white">198</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">AUM</p>
-                            <p class="text-lg font-bold text-white">$890K</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-red-500/10 text-red-400">High Risk</span>
-                        <div x-data="{ enabled: true }" class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" :checked="enabled" @click="enabled = !enabled" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> View
-                        </button>
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/30 text-primary-400 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Trader Card 5 -->
-                <div class="trader-card bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center text-white text-sm font-bold">DK</div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">David Kim</h3>
-                                <p class="text-xs text-gray-400">Crypto Specialist</p>
-                            </div>
-                        </div>
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400">Inactive</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Win Rate</p>
-                            <p class="text-lg font-bold text-green-400">75.6%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Monthly Return</p>
-                            <p class="text-lg font-bold text-primary-400">+16.9%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Followers</p>
-                            <p class="text-lg font-bold text-white">351</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">AUM</p>
-                            <p class="text-lg font-bold text-white">$3.7M</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400">Medium Risk</span>
-                        <div x-data="{ enabled: false }" class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" :checked="enabled" @click="enabled = !enabled" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> View
-                        </button>
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/30 text-primary-400 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Trader Card 6 -->
-                <div class="trader-card bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-rose-700 flex items-center justify-center text-white text-sm font-bold">LP</div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">Lisa Park</h3>
-                                <p class="text-xs text-gray-400">Mixed Portfolio</p>
-                            </div>
-                        </div>
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Active</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Win Rate</p>
-                            <p class="text-lg font-bold text-green-400">73.2%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Monthly Return</p>
-                            <p class="text-lg font-bold text-primary-400">+12.8%</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Followers</p>
-                            <p class="text-lg font-bold text-white">10</p>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-3">
-                            <p class="text-xs text-gray-500">AUM</p>
-                            <p class="text-lg font-bold text-white">$1.2M</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-red-500/10 text-red-400">High Risk</span>
-                        <div x-data="{ enabled: true }" class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" :checked="enabled" @click="enabled = !enabled" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> View
-                        </button>
-                        <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/30 text-primary-400 text-xs font-medium px-3 py-2 rounded-lg transition-colors">
-                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
-                        </button>
-                    </div>
-                </div>
+                </template>
             </div>
         </div>
 
@@ -635,175 +425,34 @@
                             <th class="px-6 py-3">ID</th>
                             <th class="px-6 py-3">Copier</th>
                             <th class="px-6 py-3">Trader Copied</th>
-                            <th class="px-6 py-3">Symbol</th>
-                            <th class="px-6 py-3">Lots</th>
                             <th class="px-6 py-3">PnL</th>
                             <th class="px-6 py-3">Status</th>
                             <th class="px-6 py-3">Time</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-800">
-                        <tr class="hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-400 font-mono">#CT-24891</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold">JD</div>
-                                    <div>
-                                        <p class="text-sm font-medium text-white">John Doe</p>
-                                        <p class="text-xs text-gray-500">john@email.com</p>
+                        <template x-for="activity in activities" :key="activity.id">
+                            <tr class="hover:bg-gray-800/50 transition-colors">
+                                <td class="px-6 py-4 text-sm text-gray-400 font-mono" x-text="'#CT-' + activity.id"></td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-xs font-bold" :class="getAvatarColor(activity.copied_by)" x-text="getInitials(activity.copied_by)"></div>
+                                        <span class="text-sm font-medium text-white" x-text="activity.copied_by || '-'"></span>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-white text-[10px] font-bold">AM</div>
-                                    <span class="text-sm text-gray-300">Alex Morgan</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-white">EUR/USD</td>
-                            <td class="px-6 py-4 text-sm text-gray-300">0.50</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-green-400">+$1,240.00</td>
-                            <td class="px-6 py-4"><span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Closed</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-400">2 min ago</td>
-                        </tr>
-                        <tr class="hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-400 font-mono">#CT-24890</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-white text-xs font-bold">SM</div>
-                                    <div>
-                                        <p class="text-sm font-medium text-white">Sarah Miller</p>
-                                        <p class="text-xs text-gray-500">sarah@email.com</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-bold" :class="getAvatarColor(activity.trader_name)" x-text="getInitials(activity.trader_name)"></div>
+                                        <span class="text-sm text-gray-300" x-text="activity.trader_name"></span>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-700 flex items-center justify-center text-white text-[10px] font-bold">SC</div>
-                                    <span class="text-sm text-gray-300">Sarah Chen</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-white">BTC/USDT</td>
-                            <td class="px-6 py-4 text-sm text-gray-300">0.25</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-green-400">+$3,580.00</td>
-                            <td class="px-6 py-4"><span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Closed</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-400">18 min ago</td>
-                        </tr>
-                        <tr class="hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-400 font-mono">#CT-24889</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-700 flex items-center justify-center text-white text-xs font-bold">MB</div>
-                                    <div>
-                                        <p class="text-sm font-medium text-white">Michael Brown</p>
-                                        <p class="text-xs text-gray-500">michael@email.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-white text-[10px] font-bold">JR</div>
-                                    <span class="text-sm text-gray-300">James Rodriguez</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-white">GBP/JPY</td>
-                            <td class="px-6 py-4 text-sm text-gray-300">0.10</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-red-400">-$420.00</td>
-                            <td class="px-6 py-4"><span class="text-xs font-medium px-2.5 py-1 rounded-full bg-red-500/10 text-red-400">Closed</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-400">45 min ago</td>
-                        </tr>
-                        <tr class="hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-400 font-mono">#CT-24888</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center text-white text-xs font-bold">EW</div>
-                                    <div>
-                                        <p class="text-sm font-medium text-white">Emma Wilson</p>
-                                        <p class="text-xs text-gray-500">emma@email.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-white text-[10px] font-bold">AM</div>
-                                    <span class="text-sm text-gray-300">Alex Morgan</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-white">USD/JPY</td>
-                            <td class="px-6 py-4 text-sm text-gray-300">1.00</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-green-400">+$2,150.00</td>
-                            <td class="px-6 py-4"><span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Closed</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-400">1 hour ago</td>
-                        </tr>
-                        <tr class="hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-400 font-mono">#CT-24887</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-xs font-bold">RJ</div>
-                                    <div>
-                                        <p class="text-sm font-medium text-white">Robert Johnson</p>
-                                        <p class="text-xs text-gray-500">robert@email.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-700 flex items-center justify-center text-white text-[10px] font-bold">SC</div>
-                                    <span class="text-sm text-gray-300">Sarah Chen</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-white">ETH/USDT</td>
-                            <td class="px-6 py-4 text-sm text-gray-300">0.40</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-green-400">+$5,890.00</td>
-                            <td class="px-6 py-4"><span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Closed</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-400">2 hours ago</td>
-                        </tr>
-                        <tr class="hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-400 font-mono">#CT-24886</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-white text-xs font-bold">AL</div>
-                                    <div>
-                                        <p class="text-sm font-medium text-white">Alice Lee</p>
-                                        <p class="text-xs text-gray-500">alice@email.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-500 to-orange-700 flex items-center justify-center text-white text-[10px] font-bold">EW</div>
-                                    <span class="text-sm text-gray-300">Emily Watson</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-white">AUD/USD</td>
-                            <td class="px-6 py-4 text-sm text-gray-300">0.75</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-red-400">-$680.00</td>
-                            <td class="px-6 py-4"><span class="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400">Pending</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-400">3 hours ago</td>
-                        </tr>
-                        <tr class="hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-400 font-mono">#CT-24885</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white text-xs font-bold">NG</div>
-                                    <div>
-                                        <p class="text-sm font-medium text-white">Nina Garcia</p>
-                                        <p class="text-xs text-gray-500">nina@email.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-red-500 to-rose-700 flex items-center justify-center text-white text-[10px] font-bold">LP</div>
-                                    <span class="text-sm text-gray-300">Lisa Park</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-white">SOL/USDT</td>
-                            <td class="px-6 py-4 text-sm text-gray-300">0.30</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-green-400">+$1,920.00</td>
-                            <td class="px-6 py-4"><span class="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400">Closed</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-400">5 hours ago</td>
-                        </tr>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-semibold" :class="activity.pnl >= 0 ? 'text-green-400' : 'text-red-400'" x-text="(activity.pnl >= 0 ? '+' : '-') + formatCurrency(Math.abs(activity.pnl || 0))"></td>
+                                <td class="px-6 py-4">
+                                    <span class="text-xs font-medium px-2.5 py-1 rounded-full" :class="statusColor(activity.status)" x-text="activity.status"></span>
+                                </td>
+                                <td class="px-6 py-4 text-xs text-gray-400" x-text="timeAgo(activity.created_at)"></td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>

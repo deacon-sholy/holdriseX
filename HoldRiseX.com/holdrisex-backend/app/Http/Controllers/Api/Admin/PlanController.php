@@ -12,7 +12,7 @@ class PlanController extends Controller
 {
     public function index(): JsonResponse
     {
-        $plans = InvestmentPlan::withCount('investments')->orderBy('sort_order')->get();
+        $plans = InvestmentPlan::withCount('userInvestments')->orderBy('sort_order')->get();
 
         return response()->json($plans);
     }

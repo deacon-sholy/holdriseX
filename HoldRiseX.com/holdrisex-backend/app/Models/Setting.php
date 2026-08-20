@@ -10,6 +10,5 @@ class Setting extends Model
         'key',
         'value',
         'group_name',
-        'type',
     ];
 }

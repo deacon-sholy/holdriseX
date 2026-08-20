@@ -14,7 +14,7 @@ class AnnouncementController extends Controller
         $query = Announcement::query();
 
         if ($status = $request->input('status')) {
-            $query->where('is_published', $status === 'published');
+            $query->where('status', $status);
         }
 
         if ($search = $request->input('search')) {
@@ -34,10 +34,20 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'type' => 'nullable|in:info,warning,maintenance,update',
+            'type' => 'nullable|in:info,warning,maintenance,promotion',
+            'target_audience' => 'nullable|in:all,specific_group',
+            'status' => 'nullable|in:published,draft,scheduled',
+            'scheduled_at' => 'nullable|date|after:now',
         ]);
 
         $validated['type'] = $validated['type'] ?? 'info';
+        $validated['target_audience'] = $validated['target_audience'] ?? 'all';
+        $validated['status'] = $validated['status'] ?? 'draft';
+        $validated['admin_id'] = $request->user()->id;
+
+        if (($validated['status'] ?? 'draft') === 'published') {
+            $validated['published_at'] = now();
+        }
 
         $announcement = Announcement::create($validated);
 
@@ -54,7 +64,10 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
-            'type' => 'sometimes|in:info,warning,maintenance,update',
+            'type' => 'sometimes|in:info,warning,maintenance,promotion',
+            'target_audience' => 'sometimes|in:all,specific_group',
+            'status' => 'sometimes|in:published,draft,scheduled',
+            'scheduled_at' => 'nullable|date|after:now',
         ]);
 
         $announcement->update($validated);
@@ -78,8 +91,7 @@ class AnnouncementController extends Controller
         $announcement = Announcement::findOrFail($id);
 
         $announcement->update([
-            'is_published' => true,
-            'published_at' => now(),
+            'status' => 'published',
         ]);
 
         return response()->json([
@@ -92,8 +104,9 @@ class AnnouncementController extends Controller
     {
         return response()->json([
             'total' => Announcement::count(),
-            'published' => Announcement::where('is_published', true)->count(),
-            'draft' => Announcement::where('is_published', false)->count(),
+            'published' => Announcement::where('status', 'published')->count(),
+            'draft' => Announcement::where('status', 'draft')->count(),
+            'scheduled' => Announcement::where('status', 'scheduled')->count(),
         ]);
     }
 }

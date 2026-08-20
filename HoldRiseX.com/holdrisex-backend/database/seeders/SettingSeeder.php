@@ -28,6 +28,9 @@ class SettingSeeder extends Seeder
             ['key' => 'max_deposit', 'value' => '100000', 'group_name' => 'payments'],
             ['key' => 'withdrawal_fee', 'value' => '2.5', 'group_name' => 'payments'],
             ['key' => 'processing_time', 'value' => '24', 'group_name' => 'payments'],
+            ['key' => 'deposit_wallet_bitcoin', 'value' => 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', 'group_name' => 'payments'],
+            ['key' => 'deposit_wallet_ethereum', 'value' => '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', 'group_name' => 'payments'],
+            ['key' => 'deposit_wallet_usdt', 'value' => 'TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9', 'group_name' => 'payments'],
 
             // Security
             ['key' => 'two_factor_enforcement', 'value' => 'false', 'group_name' => 'security'],

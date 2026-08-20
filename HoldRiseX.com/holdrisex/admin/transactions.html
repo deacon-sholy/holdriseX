@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algo Trading - Transactions</title>
+    <title>HoldRiseX - Transactions</title>
+    <link href="../favicon.svg" rel="icon" type="image/svg+xml" />
     <link rel="shortcut icon" href="../storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,6 +52,7 @@
     currentPage: 1,
     perPage: 10,
     transactions: [],
+    allTransactions: [],
     stats: { total: 0, volume: 0, pending: 0, failed: 0 },
     loading: true,
     async init() {
@@ -60,30 +62,86 @@
         lucide.createIcons();
     },
     async fetchTransactions() {
-        const p = new URLSearchParams({ page: this.currentPage, per_page: this.perPage });
-        if (this.search) p.set('search', this.search);
-        if (this.typeFilter !== 'all') p.set('type', this.typeFilter);
-        if (this.statusFilter !== 'all') p.set('status', this.statusFilter);
-        const res = await apiGet('/admin/transactions?' + p.toString());
-        if (res && res.data) {
-            this.transactions = res.data.map(tx => ({
-                ...tx,
-                user: tx.user?.name || tx.user_name || 'Unknown',
-                email: tx.user?.email || tx.user_email || '',
-                initials: getInitials(tx.user?.name || tx.user_name),
-                gradient: getAvatarColor(tx.user?.name || tx.user_name),
-                asset: tx.asset || tx.method || tx.symbol || '-',
-                date: tx.created_at || tx.date || '-'
-            }));
+        const params = new URLSearchParams({ page: 1, per_page: 100 });
+        const [depRes, witRes] = await Promise.all([
+            apiGet('/admin/deposits?' + params.toString()),
+            apiGet('/admin/withdrawals?' + params.toString())
+        ]);
+        let merged = [];
+        if (depRes && depRes.data) {
+            merged = merged.concat(depRes.data.map(d => ({
+                id: 'DEP-' + d.id,
+                _id: d.id,
+                type: 'deposit',
+                user: d.user?.name || 'Unknown',
+                email: d.user?.email || '',
+                initials: getInitials(d.user?.name),
+                gradient: getAvatarColor(d.user?.name),
+                asset: d.method || '-',
+                amount: d.amount,
+                fee: 0,
+                status: d.status,
+                date: formatDate(d.created_at),
+                wallet: d.transaction_id || '-'
+            })));
         }
-        this.loading = false;
+        if (witRes && witRes.data) {
+            merged = merged.concat(witRes.data.map(w => ({
+                id: 'WD-' + w.id,
+                _id: w.id,
+                type: 'withdrawal',
+                user: w.user?.name || 'Unknown',
+                email: w.user?.email || '',
+                initials: getInitials(w.user?.name),
+                gradient: getAvatarColor(w.user?.name),
+                asset: w.method || '-',
+                amount: w.amount,
+                fee: 0,
+                status: w.status,
+                date: formatDate(w.created_at),
+                wallet: w.wallet_address || '-'
+            })));
+        }
+        merged.sort((a, b) => {
+            const da = a.date === '-' ? 0 : new Date(a.date);
+            const db = b.date === '-' ? 0 : new Date(b.date);
+            return db - da;
+        });
+        this.allTransactions = merged;
+        this.applyLocalFilters();
     },
     async fetchStats() {
-        const res = await apiGet('/admin/transactions-stats');
-        if (res) this.stats = res;
+        const [depStats, witStats] = await Promise.all([
+            apiGet('/admin/deposits-stats'),
+            apiGet('/admin/withdrawals-stats')
+        ]);
+        this.stats = {
+            total: (depStats?.total_amount || 0) + (witStats?.total_amount || 0),
+            volume: (depStats?.total_amount || 0) + (witStats?.total_amount || 0),
+            pending: (depStats?.pending || 0) + (witStats?.pending || 0),
+            failed: depStats?.failed || 0
+        };
     },
-    applyFilters() { this.currentPage = 1; this.fetchTransactions().then(() => lucide.createIcons()); },
-    goToPage(p) { if (p < 1 || p > this.lastPage) return; this.currentPage = p; this.fetchTransactions().then(() => lucide.createIcons()); }
+    applyLocalFilters() {
+        let filtered = this.allTransactions;
+        if (this.search) {
+            const s = this.search.toLowerCase();
+            filtered = filtered.filter(tx =>
+                tx.id.toLowerCase().includes(s) ||
+                tx.user.toLowerCase().includes(s) ||
+                tx.asset.toLowerCase().includes(s)
+            );
+        }
+        if (this.typeFilter !== 'all') filtered = filtered.filter(tx => tx.type === this.typeFilter);
+        if (this.statusFilter !== 'all') filtered = filtered.filter(tx => tx.status === this.statusFilter);
+        this.transactions = filtered;
+    },
+    applyFilters() { this.currentPage = 1; this.applyLocalFilters(); lucide.createIcons(); },
+    goToPage(p) { if (p < 1 || p > this.totalPages) return; this.currentPage = p; lucide.createIcons(); },
+    get filteredTransactions() {
+        return this.transactions.slice((this.currentPage - 1) * this.perPage, this.currentPage * this.perPage);
+    },
+    get totalPages() { return Math.ceil(this.transactions.length / this.perPage) || 1; }
 }" x-init="init()">
 
 <!-- Mobile sidebar overlay -->
@@ -238,12 +296,12 @@
                     </div>
                 </div>
 
-                <div x-data="{ open: false }" class="relative">
+                <div x-data="{ open: false, adminUser: getAdminUser() }" class="relative">
                     <button @click="open = !open" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800 transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">A</div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold" x-text="getInitials(adminUser?.name || 'Admin')"></div>
                         <div class="hidden sm:block text-left">
-                            <p class="text-sm font-medium text-white leading-tight">Admin</p>
-                            <p class="text-xs text-gray-400">Super Admin</p>
+                            <p class="text-sm font-medium text-white leading-tight" x-text="adminUser?.name || 'Admin'"></p>
+                            <p class="text-xs text-gray-400" x-text="adminUser?.role || 'Super Admin'"></p>
                         </div>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
                     </button>
@@ -296,7 +354,7 @@
                         <i data-lucide="trending-up" class="w-3 h-3"></i> +8.3%
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">12,456</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="allTransactions.length.toLocaleString()"></h3>
                 <p class="text-gray-400 text-sm mt-1">Total Transactions</p>
             </div>
 
@@ -309,7 +367,7 @@
                         <i data-lucide="trending-up" class="w-3 h-3"></i> +12.7%
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">$4.8M</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="formatCurrency(stats.volume)"></h3>
                 <p class="text-gray-400 text-sm mt-1">Total Volume</p>
             </div>
 
@@ -320,7 +378,7 @@
                     </div>
                     <span class="text-xs bg-yellow-500/20 text-yellow-400 font-medium px-2 py-0.5 rounded-full">Action needed</span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">23</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.pending || 0"></h3>
                 <p class="text-gray-400 text-sm mt-1">Pending</p>
             </div>
 
@@ -331,7 +389,7 @@
                     </div>
                     <span class="text-xs bg-red-500/20 text-red-400 font-medium px-2 py-0.5 rounded-full">Review</span>
                 </div>
-                <h3 class="text-2xl font-bold text-white">5</h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.failed || 0"></h3>
                 <p class="text-gray-400 text-sm mt-1">Failed</p>
             </div>
         </div>
@@ -383,12 +441,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-800">
-                        <template x-for="(tx, index) in transactions.filter(tx => {
-                            let matchSearch = !search || tx.id.toLowerCase().includes(search.toLowerCase()) || tx.user.toLowerCase().includes(search.toLowerCase()) || tx.asset.toLowerCase().includes(search.toLowerCase());
-                            let matchType = typeFilter === 'all' || tx.type === typeFilter;
-                            let matchStatus = statusFilter === 'all' || tx.status === statusFilter;
-                            return matchSearch && matchType && matchStatus;
-                        }).slice((currentPage - 1) * perPage, currentPage * perPage)" :key="tx.id">
+                        <template x-for="(tx, index) in filteredTransactions" :key="tx.id">
                             <tr class="hover:bg-gray-800/50 transition-colors">
                                 <td class="px-6 py-4">
                                     <span class="text-xs font-mono text-gray-400" x-text="tx.id"></span>
@@ -455,7 +508,7 @@
             <!-- Pagination -->
             <div class="px-6 py-4 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p class="text-sm text-gray-500">
-                    Showing <span class="font-medium text-gray-300" x-text="((currentPage - 1) * perPage) + 1"></span> to <span class="font-medium text-gray-300" x-text="Math.min(currentPage * perPage, transactions.filter(tx => { let matchSearch = !search || tx.id.toLowerCase().includes(search.toLowerCase()) || tx.user.toLowerCase().includes(search.toLowerCase()) || tx.asset.toLowerCase().includes(search.toLowerCase()); let matchType = typeFilter === 'all' || tx.type === typeFilter; let matchStatus = statusFilter === 'all' || tx.status === statusFilter; return matchSearch && matchType && matchStatus; }).length)"></span> of <span class="font-medium text-gray-300" x-text="transactions.filter(tx => { let matchSearch = !search || tx.id.toLowerCase().includes(search.toLowerCase()) || tx.user.toLowerCase().includes(search.toLowerCase()) || tx.asset.toLowerCase().includes(search.toLowerCase()); let matchType = typeFilter === 'all' || tx.type === typeFilter; let matchStatus = statusFilter === 'all' || tx.status === statusFilter; return matchSearch && matchType && matchStatus; }).length"></span> transactions
+                    Showing <span class="font-medium text-gray-300" x-text="transactions.length ? ((currentPage - 1) * perPage) + 1 : 0"></span> to <span class="font-medium text-gray-300" x-text="Math.min(currentPage * perPage, transactions.length)"></span> of <span class="font-medium text-gray-300" x-text="transactions.length"></span> transactions
                 </p>
                 <div class="flex items-center gap-2">
                     <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
@@ -463,17 +516,17 @@
                             :class="currentPage === 1 ? 'border-gray-800 text-gray-600 cursor-not-allowed' : 'border-gray-700 text-gray-300 hover:bg-gray-800'">
                         Previous
                     </button>
-                    <template x-for="page in Math.ceil(transactions.filter(tx => { let matchSearch = !search || tx.id.toLowerCase().includes(search.toLowerCase()) || tx.user.toLowerCase().includes(search.toLowerCase()) || tx.asset.toLowerCase().includes(search.toLowerCase()); let matchType = typeFilter === 'all' || tx.type === typeFilter; let matchStatus = statusFilter === 'all' || tx.status === statusFilter; return matchSearch && matchType && matchStatus; }).length / perPage)" :key="page">
+                    <template x-for="page in totalPages" :key="page">
                         <button @click="currentPage = page"
                                 class="w-8 h-8 text-sm rounded-lg font-medium transition-colors"
                                 :class="currentPage === page ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800'">
                             <span x-text="page"></span>
                         </button>
                     </template>
-                    <button @click="currentPage = Math.min(Math.ceil(transactions.filter(tx => { let matchSearch = !search || tx.id.toLowerCase().includes(search.toLowerCase()) || tx.user.toLowerCase().includes(search.toLowerCase()) || tx.asset.toLowerCase().includes(search.toLowerCase()); let matchType = typeFilter === 'all' || tx.type === typeFilter; let matchStatus = statusFilter === 'all' || tx.status === statusFilter; return matchSearch && matchType && matchStatus; }).length / perPage), currentPage + 1)"
-                            :disabled="currentPage === Math.ceil(transactions.filter(tx => { let matchSearch = !search || tx.id.toLowerCase().includes(search.toLowerCase()) || tx.user.toLowerCase().includes(search.toLowerCase()) || tx.asset.toLowerCase().includes(search.toLowerCase()); let matchType = typeFilter === 'all' || tx.type === typeFilter; let matchStatus = statusFilter === 'all' || tx.status === statusFilter; return matchSearch && matchType && matchStatus; }).length / perPage)"
+                    <button @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                            :disabled="currentPage === totalPages"
                             class="px-3 py-1.5 text-sm rounded-lg border transition-colors"
-                            :class="currentPage === Math.ceil(transactions.filter(tx => { let matchSearch = !search || tx.id.toLowerCase().includes(search.toLowerCase()) || tx.user.toLowerCase().includes(search.toLowerCase()) || tx.asset.toLowerCase().includes(search.toLowerCase()); let matchType = typeFilter === 'all' || tx.type === typeFilter; let matchStatus = statusFilter === 'all' || tx.status === statusFilter; return matchSearch && matchType && matchStatus; }).length / perPage) ? 'border-gray-800 text-gray-600 cursor-not-allowed' : 'border-gray-700 text-gray-300 hover:bg-gray-800'">
+                            :class="currentPage === totalPages ? 'border-gray-800 text-gray-600 cursor-not-allowed' : 'border-gray-700 text-gray-300 hover:bg-gray-800'">
                         Next
                     </button>
                 </div>

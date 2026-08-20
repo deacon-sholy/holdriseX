@@ -21,19 +21,18 @@ class CopyTradingController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'avatar' => 'nullable|string',
-            'description' => 'nullable|string',
+            'specialty' => 'required|in:forex,crypto,mixed',
             'win_rate' => 'nullable|numeric|min:0|max:100',
-            'total_trades' => 'nullable|integer|min:0',
-            'total_profit' => 'nullable|numeric',
-            'subscribers' => 'nullable|integer|min:0',
+            'monthly_return' => 'nullable|numeric',
+            'risk_level' => 'required|in:low,medium,high',
+            'description' => 'nullable|string',
             'is_active' => 'nullable|boolean',
         ]);
 
         $validated['win_rate'] = $validated['win_rate'] ?? 0;
-        $validated['total_trades'] = $validated['total_trades'] ?? 0;
-        $validated['total_profit'] = $validated['total_profit'] ?? 0;
-        $validated['subscribers'] = $validated['subscribers'] ?? 0;
+        $validated['monthly_return'] = $validated['monthly_return'] ?? 0;
+        $validated['total_followers'] = 0;
+        $validated['aum'] = 0;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
         $trader = CopyTrader::create($validated);
@@ -50,12 +49,11 @@ class CopyTradingController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'avatar' => 'nullable|string',
-            'description' => 'nullable|string',
+            'specialty' => 'sometimes|in:forex,crypto,mixed',
             'win_rate' => 'sometimes|numeric|min:0|max:100',
-            'total_trades' => 'sometimes|integer|min:0',
-            'total_profit' => 'sometimes|numeric',
-            'subscribers' => 'sometimes|integer|min:0',
+            'monthly_return' => 'sometimes|numeric',
+            'risk_level' => 'sometimes|in:low,medium,high',
+            'description' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
         ]);
 

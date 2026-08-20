@@ -16,12 +16,20 @@ class AuditLogController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('action', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                  ->orWhere('details', 'like', "%{$search}%");
             });
         }
 
         if ($action = $request->input('action')) {
             $query->where('action', $action);
+        }
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($severity = $request->input('severity')) {
+            $query->where('severity', $severity);
         }
 
         if ($request->filled('from_date')) {

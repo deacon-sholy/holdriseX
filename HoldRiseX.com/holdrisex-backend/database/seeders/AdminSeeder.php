@@ -13,7 +13,7 @@ class AdminSeeder extends Seeder
         DB::table('users')->insert([
             'name' => 'Admin',
             'email' => 'admin@holdrisex.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('123456789'),
             'role' => 'admin',
             'is_active' => true,
             'balance' => 0,

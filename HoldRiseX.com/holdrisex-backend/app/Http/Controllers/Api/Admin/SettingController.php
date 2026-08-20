@@ -11,7 +11,7 @@ class SettingController extends Controller
 {
     public function index(): JsonResponse
     {
-        $settings = Setting::all()->groupBy('group_name');
+        $settings = Setting::all();
 
         return response()->json($settings);
     }

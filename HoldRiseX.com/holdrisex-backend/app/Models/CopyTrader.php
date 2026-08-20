@@ -12,26 +12,28 @@ class CopyTrader extends Model
 
     protected $fillable = [
         'name',
-        'avatar',
-        'description',
+        'specialty',
         'win_rate',
-        'total_trades',
-        'total_profit',
-        'subscribers',
+        'monthly_return',
+        'total_followers',
+        'aum',
+        'risk_level',
         'is_active',
+        'description',
     ];
 
     protected function casts(): array
     {
         return [
             'win_rate' => 'decimal:2',
-            'total_profit' => 'decimal:2',
+            'monthly_return' => 'decimal:2',
+            'aum' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
 
     public function copyTrades(): HasMany
     {
-        return $this->hasMany(CopyTrade::class);
+        return $this->hasMany(CopyTrade::class, 'trader_id');
     }
 }

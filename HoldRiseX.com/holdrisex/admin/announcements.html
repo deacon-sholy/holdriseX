@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algo Trading - Announcements</title>
+    <title>HoldRiseX - Announcements</title>
+    <link href="../favicon.svg" rel="icon" type="image/svg+xml" />
     <link rel="shortcut icon" href="../storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +26,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="api.js"></script>
     <style>
         [x-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 6px; }
@@ -39,52 +41,7 @@
         .stat-card { transition: all 0.3s ease; }
     </style>
 </head>
-<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="{
-    sidebarOpen: true,
-    mobileSidebar: false,
-    activeTab: 'all',
-    showModal: false,
-    showDeleteModal: false,
-    editingId: null,
-    deleteId: null,
-    form: { title: '', content: '', type: 'Info', target: 'All Users', scheduleDate: '' },
-    announcements: [
-        { id: 1, title: 'Platform Maintenance Scheduled - August 20th', content: 'We will be performing scheduled maintenance on our trading infrastructure on August 20th from 2:00 AM to 6:00 AM UTC. During this time, all trading activities including copy trading will be temporarily suspended. Your existing positions will remain safe and unchanged. We recommend closing any open positions before the maintenance window.', type: 'Maintenance', target: 'All Users', status: 'Published', date: 'Aug 10, 2026', views: 1842 },
-        { id: 2, title: 'New Copy Trading Feature: Multi-Strategy Support', content: 'We are excited to announce that copy trading now supports multiple strategy following simultaneously. You can now follow up to 5 different traders at once with customizable allocation percentages. This update also includes improved risk management tools and real-time performance analytics for each copied strategy.', type: 'Info', target: 'All Users', status: 'Published', date: 'Aug 8, 2026', views: 2156 },
-        { id: 3, title: 'Summer Trading Bonus - 50% Deposit Match', content: 'For a limited time, enjoy a 50% bonus on all deposits made between August 15th and September 15th. Maximum bonus amount is $10,000 per account. The bonus can be used for trading and will be subject to standard withdrawal requirements. Use promo code SUMMER50 when making your deposit.', type: 'Promotion', target: 'All Users', status: 'Published', date: 'Aug 5, 2026', views: 3421 },
-        { id: 4, title: 'KYC Verification Policy Update', content: 'Starting September 1st, all accounts with deposits exceeding $5,000 will be required to complete Level 2 KYC verification. This includes providing proof of address and a brief source of funds declaration. Existing users who meet the threshold will have 30 days to complete verification. Accounts that remain unverified may face temporary withdrawal restrictions.', type: 'Warning', target: 'All Users', status: 'Published', date: 'Aug 3, 2026', views: 1567 },
-        { id: 5, title: 'VIP Trading Room Access - Exclusive Webinar', content: 'Join our exclusive webinar on August 22nd featuring professional trader Marcus Chen as he breaks down advanced scalping techniques and market microstructure analysis. VIP members will gain access to a private Telegram channel with real-time trade ideas for 30 days following the event. Space is limited to 200 participants.', type: 'Info', target: 'Specific Group', status: 'Published', date: 'Aug 1, 2026', views: 876 },
-        { id: 6, title: 'Withdrawal Processing Improvements', content: 'We have upgraded our withdrawal processing pipeline. Crypto withdrawals are now processed within 15 minutes on average, and bank wire transfers are settled within 1-2 business days. These improvements are part of our commitment to providing the fastest fund access in the industry. No action required from your side.', type: 'Info', target: 'All Users', status: 'Published', date: 'Jul 28, 2026', views: 2890 },
-        { id: 7, title: 'Regulatory Compliance Update - EU Region', content: 'We are updating our services to comply with new EU financial regulations effective October 1st. Users in the EU region may need to complete additional documentation. Detailed instructions will be sent via email. Our team is working to ensure a smooth transition with minimal impact on your trading activities.', type: 'Warning', target: 'Specific Group', status: 'Draft', date: 'Jul 25, 2026', views: 0 },
-        { id: 8, title: 'Referral Program Tier Upgrade', content: 'Our referral program is getting a major upgrade! Starting September 1st, top referrers will earn up to 15% lifetime commission on referred users deposits, up from the current 10%. We are also introducing a new leaderboard with monthly prizes for the top 10 referrers. Full details coming soon.', type: 'Promotion', target: 'All Users', status: 'Draft', date: 'Jul 22, 2026', views: 0 },
-        { id: 9, title: 'New Asset Listing: Solana (SOL) Trading Pairs', content: 'We are adding SOL/USDT and SOL/BTC trading pairs to our platform. Trading will commence on September 5th. Early access will be available for VIP members starting August 28th. Solana has shown strong institutional interest and we believe it will be a valuable addition to our trading ecosystem.', type: 'Info', target: 'All Users', status: 'Scheduled', date: 'Jul 20, 2026', views: 0 },
-        { id: 10, title: 'Annual Platform Anniversary Celebration', content: 'Join us in celebrating HoldRiseX\'s 3rd anniversary! Starting September 10th, we will be hosting a week-long celebration with special trading competitions, reduced fees, exclusive NFT rewards for active traders, and a grand prize draw of $50,000 for all users who trade during the event period.', type: 'Promotion', target: 'All Users', status: 'Scheduled', date: 'Jul 18, 2026', views: 0 }
-    ],
-    get filteredAnnouncements() {
-        if (this.activeTab === 'all') return this.announcements;
-        const statusMap = { published: 'Published', draft: 'Draft', scheduled: 'Scheduled' };
-        return this.announcements.filter(a => a.status === statusMap[this.activeTab]);
-    },
-    get total() { return this.announcements.length; },
-    get publishedCount() { return this.announcements.filter(a => a.status === 'Published').length; },
-    get draftCount() { return this.announcements.filter(a => a.status === 'Draft').length; },
-    get scheduledCount() { return this.announcements.filter(a => a.status === 'Scheduled').length; },
-    openCreate() { this.editingId = null; this.form = { title: '', content: '', type: 'Info', target: 'All Users', scheduleDate: '' }; this.showModal = true; },
-    openEdit(id) { const a = this.announcements.find(x => x.id === id); this.editingId = id; this.form = { title: a.title, content: a.content, type: a.type, target: a.target, scheduleDate: '' }; this.showModal = true; },
-    saveForm() {
-        if (!this.form.title || !this.form.content) return;
-        if (this.editingId) {
-            const a = this.announcements.find(x => x.id === this.editingId);
-            a.title = this.form.title; a.content = this.form.content; a.type = this.form.type; a.target = this.form.target;
-        } else {
-            this.announcements.unshift({ id: Date.now(), title: this.form.title, content: this.form.content, type: this.form.type, target: this.form.target, status: 'Draft', date: 'Just now', views: 0 });
-        }
-        this.showModal = false;
-    },
-    confirmDelete(id) { this.deleteId = id; this.showDeleteModal = true; },
-    deleteAnnouncement() { this.announcements = this.announcements.filter(a => a.id !== this.deleteId); this.showDeleteModal = false; },
-    publishAnnouncement(id) { const a = this.announcements.find(x => x.id === id); a.status = 'Published'; }
-}">
+<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="announcementsApp()" x-init="requireAuth()">
 
 <!-- Mobile sidebar overlay -->
 <div x-show="mobileSidebar" x-cloak @click="mobileSidebar = false"
@@ -168,7 +125,7 @@
 
     <!-- Bottom -->
     <div class="p-3 border-t border-gray-800">
-        <a href="login.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
+        <a href="login.html" @click="clearAuthToken()" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
             <i data-lucide="log-out" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">Logout</span>
         </a>
@@ -246,9 +203,9 @@
                 <!-- Admin Profile -->
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800 transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">A</div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold" x-text="getAdminUser() ? getAdminUser().name.charAt(0) : 'A'"></div>
                         <div class="hidden sm:block text-left">
-                            <p class="text-sm font-medium text-white leading-tight">Admin</p>
+                            <p class="text-sm font-medium text-white leading-tight" x-text="getAdminUser() ? getAdminUser().name : 'Admin'"></p>
                             <p class="text-xs text-gray-400">Super Admin</p>
                         </div>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
@@ -299,40 +256,40 @@
                         <i data-lucide="trending-up" class="w-3 h-3"></i> +3
                     </span>
                 </div>
-                <h3 class="text-2xl font-bold text-white" x-text="total"></h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.total"></h3>
                 <p class="text-gray-400 text-sm mt-1">Total Announcements</p>
             </div>
 
-            <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-5 cursor-pointer" @click="activeTab = 'published'">
+            <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-5 cursor-pointer" @click="activeTab = 'published'; fetchAnnouncements()">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-10 h-10 rounded-lg bg-green-600/20 flex items-center justify-center">
                         <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
                     </div>
                     <span class="text-xs bg-green-500/20 text-green-400 font-medium px-2 py-0.5 rounded-full">Live</span>
                 </div>
-                <h3 class="text-2xl font-bold text-white" x-text="publishedCount"></h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.published"></h3>
                 <p class="text-gray-400 text-sm mt-1">Published</p>
             </div>
 
-            <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-5 cursor-pointer" @click="activeTab = 'draft'">
+            <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-5 cursor-pointer" @click="activeTab = 'draft'; fetchAnnouncements()">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-10 h-10 rounded-lg bg-yellow-600/20 flex items-center justify-center">
                         <i data-lucide="file-edit" class="w-5 h-5 text-yellow-400"></i>
                     </div>
                     <span class="text-xs bg-yellow-500/20 text-yellow-400 font-medium px-2 py-0.5 rounded-full">Pending</span>
                 </div>
-                <h3 class="text-2xl font-bold text-white" x-text="draftCount"></h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.draft"></h3>
                 <p class="text-gray-400 text-sm mt-1">Draft</p>
             </div>
 
-            <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-5 cursor-pointer" @click="activeTab = 'scheduled'">
+            <div class="stat-card bg-gray-900 border border-gray-800 rounded-xl p-5 cursor-pointer" @click="activeTab = 'scheduled'; fetchAnnouncements()">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-10 h-10 rounded-lg bg-cyan-600/20 flex items-center justify-center">
                         <i data-lucide="clock" class="w-5 h-5 text-cyan-400"></i>
                     </div>
                     <span class="text-xs bg-cyan-500/20 text-cyan-400 font-medium px-2 py-0.5 rounded-full">Upcoming</span>
                 </div>
-                <h3 class="text-2xl font-bold text-white" x-text="scheduledCount"></h3>
+                <h3 class="text-2xl font-bold text-white" x-text="stats.scheduled"></h3>
                 <p class="text-gray-400 text-sm mt-1">Scheduled</p>
             </div>
         </div>
@@ -340,22 +297,22 @@
         <!-- Tabs -->
         <div class="mb-6 animate-fade-in" style="animation-delay: 0.15s;">
             <div class="flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit">
-                <button @click="activeTab = 'all'"
+                <button @click="activeTab = 'all'; currentPage = 1; fetchAnnouncements()"
                         :class="activeTab === 'all' ? 'bg-primary-600 text-white' : 'text-gray-400 hover:text-gray-200'"
                         class="px-4 py-2 text-sm font-medium rounded-lg transition-all">
                     All
                 </button>
-                <button @click="activeTab = 'published'"
+                <button @click="activeTab = 'published'; currentPage = 1; fetchAnnouncements()"
                         :class="activeTab === 'published' ? 'bg-primary-600 text-white' : 'text-gray-400 hover:text-gray-200'"
                         class="px-4 py-2 text-sm font-medium rounded-lg transition-all">
                     Published
                 </button>
-                <button @click="activeTab = 'draft'"
+                <button @click="activeTab = 'draft'; currentPage = 1; fetchAnnouncements()"
                         :class="activeTab === 'draft' ? 'bg-primary-600 text-white' : 'text-gray-400 hover:text-gray-200'"
                         class="px-4 py-2 text-sm font-medium rounded-lg transition-all">
                     Draft
                 </button>
-                <button @click="activeTab = 'scheduled'"
+                <button @click="activeTab = 'scheduled'; currentPage = 1; fetchAnnouncements()"
                         :class="activeTab === 'scheduled' ? 'bg-primary-600 text-white' : 'text-gray-400 hover:text-gray-200'"
                         class="px-4 py-2 text-sm font-medium rounded-lg transition-all">
                     Scheduled
@@ -365,7 +322,7 @@
 
         <!-- Announcements List -->
         <div class="space-y-4">
-            <template x-for="a in filteredAnnouncements" :key="a.id">
+            <template x-for="a in announcements" :key="a.id">
                 <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors animate-fade-in">
                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div class="flex-1 min-w-0">
@@ -374,6 +331,10 @@
                                 <!-- Type Badge -->
                                 <span class="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full"
                                       :class="{
+                                          'bg-blue-500/10 text-blue-400': a.type === 'info',
+                                          'bg-yellow-500/10 text-yellow-400': a.type === 'warning',
+                                          'bg-orange-500/10 text-orange-400': a.type === 'maintenance',
+                                          'bg-purple-500/10 text-purple-400': a.type === 'promotion',
                                           'bg-blue-500/10 text-blue-400': a.type === 'Info',
                                           'bg-yellow-500/10 text-yellow-400': a.type === 'Warning',
                                           'bg-orange-500/10 text-orange-400': a.type === 'Maintenance',
@@ -382,36 +343,39 @@
                                 <!-- Status Badge -->
                                 <span class="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full"
                                       :class="{
+                                          'bg-green-500/10 text-green-400': a.status === 'published',
                                           'bg-green-500/10 text-green-400': a.status === 'Published',
+                                          'bg-yellow-500/10 text-yellow-400': a.status === 'draft',
                                           'bg-yellow-500/10 text-yellow-400': a.status === 'Draft',
+                                          'bg-cyan-500/10 text-cyan-400': a.status === 'scheduled',
                                           'bg-cyan-500/10 text-cyan-400': a.status === 'Scheduled'
                                       }" x-text="a.status"></span>
                             </div>
-                            <p class="text-sm text-gray-400 line-clamp-2 mb-3" x-text="a.content.substring(0, 180) + '...'"></p>
+                            <p class="text-sm text-gray-400 line-clamp-2 mb-3" x-text="a.content?.substring(0, 180) + '...'"></p>
                             <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                                 <span class="flex items-center gap-1">
                                     <i data-lucide="user" class="w-3 h-3"></i>
-                                    <span x-text="a.target"></span>
+                                    <span x-text="a.target_audience || a.target || 'All Users'"></span>
                                 </span>
                                 <span class="flex items-center gap-1">
                                     <i data-lucide="calendar" class="w-3 h-3"></i>
-                                    <span x-text="a.date"></span>
+                                    <span x-text="formatDate(a.created_at || a.date)"></span>
                                 </span>
-                                <span class="flex items-center gap-1" x-show="a.status === 'Published'">
+                                <span class="flex items-center gap-1" x-show="a.status === 'published' || a.status === 'Published'">
                                     <i data-lucide="eye" class="w-3 h-3"></i>
-                                    <span x-text="a.views.toLocaleString()"></span> views
+                                    Published
                                 </span>
                             </div>
                         </div>
                         <!-- Actions -->
                         <div class="flex items-center gap-2 flex-shrink-0">
-                            <button x-show="a.status === 'Draft' || a.status === 'Scheduled'"
-                                    @click="publishAnnouncement(a.id)"
+                            <button x-show="a.status === 'draft' || a.status === 'Draft' || a.status === 'scheduled' || a.status === 'Scheduled'"
+                                    @click="publishAnnouncement(a)"
                                     class="p-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded-lg transition-colors"
                                     title="Publish">
                                 <i data-lucide="send" class="w-4 h-4"></i>
                             </button>
-                            <button @click="openEdit(a.id)"
+                            <button @click="openEdit(a)"
                                     class="p-2 text-primary-400 hover:text-primary-300 hover:bg-primary-500/10 rounded-lg transition-colors"
                                     title="Edit">
                                 <i data-lucide="pencil" class="w-4 h-4"></i>
@@ -520,7 +484,7 @@
             <button @click="saveForm()"
                     class="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
                 <i data-lucide="save" class="w-4 h-4"></i>
-                <span x-text="editingId ? 'Update' : 'Publish'"></span>
+                <span x-text="editingId ? 'Update' : 'Create'"></span>
             </button>
         </div>
     </div>
@@ -554,6 +518,96 @@
 </div>
 
 <script>
+    function announcementsApp() {
+        return {
+            sidebarOpen: true,
+            mobileSidebar: false,
+            activeTab: 'all',
+            showModal: false,
+            showDeleteModal: false,
+            editingId: null,
+            deleteId: null,
+            currentPage: 1,
+            totalPages: 1,
+            totalResults: 0,
+            form: { title: '', content: '', type: 'info', target_audience: 'all_users', scheduled_at: '' },
+            announcements: [],
+            stats: { total: 0, published: 0, draft: 0, scheduled: 0 },
+            loading: false,
+
+            async init() {
+                await this.fetchStats();
+                await this.fetchAnnouncements();
+                this.$nextTick(() => lucide.createIcons());
+            },
+
+            async fetchStats() {
+                const d = await apiGet('/admin/announcements-stats');
+                if (d) this.stats = d;
+            },
+
+            async fetchAnnouncements() {
+                this.loading = true;
+                const statusParam = this.activeTab === 'all' ? '' : this.activeTab;
+                const d = await apiGet(`/admin/announcements?page=${this.currentPage}&status=${statusParam}`);
+                if (d) {
+                    this.announcements = d.data || [];
+                    this.totalPages = d.last_page || 1;
+                    this.totalResults = d.total || 0;
+                }
+                this.loading = false;
+                this.$nextTick(() => lucide.createIcons());
+            },
+
+            openCreate() {
+                this.editingId = null;
+                this.form = { title: '', content: '', type: 'info', target_audience: 'all_users', scheduled_at: '' };
+                this.showModal = true;
+            },
+
+            openEdit(a) {
+                this.editingId = a.id;
+                this.form = {
+                    title: a.title,
+                    content: a.content,
+                    type: a.type,
+                    target_audience: a.target_audience || 'all_users',
+                    scheduled_at: a.scheduled_at || ''
+                };
+                this.showModal = true;
+            },
+
+            async saveForm() {
+                if (!this.form.title || !this.form.content) return;
+                if (this.editingId) {
+                    await apiPut(`/admin/announcements/${this.editingId}`, this.form);
+                } else {
+                    await apiPost('/admin/announcements', this.form);
+                }
+                this.showModal = false;
+                await this.fetchAnnouncements();
+                await this.fetchStats();
+            },
+
+            confirmDelete(id) {
+                this.deleteId = id;
+                this.showDeleteModal = true;
+            },
+
+            async deleteAnnouncement() {
+                await apiDelete(`/admin/announcements/${this.deleteId}`);
+                this.showDeleteModal = false;
+                await this.fetchAnnouncements();
+                await this.fetchStats();
+            },
+
+            async publishAnnouncement(a) {
+                await apiPost(`/admin/announcements/${a.id}/publish`);
+                await this.fetchAnnouncements();
+                await this.fetchStats();
+            }
+        };
+    }
     document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
     document.addEventListener('alpine:updated', () => { lucide.createIcons(); });
 </script>

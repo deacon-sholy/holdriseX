@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algo Trading - Settings</title>
+    <title>HoldRiseX - Settings</title>
+    <link href="../favicon.svg" rel="icon" type="image/svg+xml" />
     <link rel="shortcut icon" href="../storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +26,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="api.js"></script>
     <style>
         [x-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 6px; }
@@ -41,7 +43,7 @@
         .toggle-checkbox { transition: all 0.3s ease; }
     </style>
 </head>
-<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="{ sidebarOpen: true, mobileSidebar: false, activeTab: 'general', showToast: false }">
+<body class="h-full bg-gray-950 font-sans antialiased text-gray-200" x-data="settingsApp()" x-init="requireAuth()">
 
 <!-- Mobile sidebar overlay -->
 <div x-show="mobileSidebar" x-cloak @click="mobileSidebar = false"
@@ -122,7 +124,7 @@
     </nav>
 
     <div class="p-3 border-t border-gray-800">
-        <a href="login.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
+        <a href="login.html" @click="clearAuthToken()" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
             <i data-lucide="log-out" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">Logout</span>
         </a>
@@ -197,9 +199,9 @@
 
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800 transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">A</div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold" x-text="getAdminUser() ? getAdminUser().name.charAt(0) : 'A'"></div>
                         <div class="hidden sm:block text-left">
-                            <p class="text-sm font-medium text-white leading-tight">Admin</p>
+                            <p class="text-sm font-medium text-white leading-tight" x-text="getAdminUser() ? getAdminUser().name : 'Admin'"></p>
                             <p class="text-xs text-gray-400">Super Admin</p>
                         </div>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
@@ -279,12 +281,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Platform Name</label>
-                            <input type="text" value="HoldRiseX"
+                            <input type="text" x-model="settingValues.site_name" placeholder="Platform Name"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Site URL</label>
-                            <input type="url" value="https://HoldRiseX.com"
+                            <input type="url" x-model="settingValues.site_url" placeholder="https://example.com"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div class="md:col-span-2">
@@ -314,8 +316,8 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Default Currency</label>
-                            <select class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
-                                <option value="USD" selected>USD - US Dollar</option>
+                            <select x-model="settingValues.default_currency" class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                                <option value="USD">USD - US Dollar</option>
                                 <option value="EUR">EUR - Euro</option>
                                 <option value="GBP">GBP - British Pound</option>
                                 <option value="NGN">NGN - Nigerian Naira</option>
@@ -325,12 +327,12 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Timezone</label>
-                            <select class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                            <select x-model="settingValues.timezone" class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                                 <option value="UTC">UTC (GMT+0)</option>
                                 <option value="EST">EST (GMT-5)</option>
                                 <option value="CST">CST (GMT-6)</option>
                                 <option value="PST">PST (GMT-8)</option>
-                                <option value="GMT" selected>GMT (GMT+0)</option>
+                                <option value="GMT">GMT (GMT+0)</option>
                                 <option value="CET">CET (GMT+1)</option>
                                 <option value="WAT">WAT (GMT+1)</option>
                                 <option value="EAT">EAT (GMT+3)</option>
@@ -360,7 +362,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="maintenance-mode" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="maintenance-mode" :checked="settingValues.maintenance_mode === '1' || settingValues.maintenance_mode === 'true'" @change="settingValues.maintenance_mode = $event.target.checked ? '1' : '0'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="maintenance-mode" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px] peer-checked:translate-x-6"></span>
                                 </label>
@@ -377,7 +379,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="allow-registration" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="allow-registration" :checked="settingValues.allow_registration === '1' || settingValues.allow_registration === 'true'" @change="settingValues.allow_registration = $event.target.checked ? '1' : '0'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="allow-registration" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -386,10 +388,28 @@
                     </div>
                 </div>
 
+                <hr class="border-gray-800">
+
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-1">Deposit Wallet Addresses</h3>
+                    <p class="text-sm text-gray-400 mb-6">Users will see these addresses when choosing a cryptocurrency deposit method.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <label class="block text-sm font-medium text-gray-300">Bitcoin
+                            <input type="text" x-model="settingValues.deposit_wallet_bitcoin" class="mt-2 w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </label>
+                        <label class="block text-sm font-medium text-gray-300">Ethereum
+                            <input type="text" x-model="settingValues.deposit_wallet_ethereum" class="mt-2 w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </label>
+                        <label class="block text-sm font-medium text-gray-300">USDT
+                            <input type="text" x-model="settingValues.deposit_wallet_usdt" class="mt-2 w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </label>
+                    </div>
+                </div>
+
                 <!-- Save / Cancel -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
                     <button class="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors">Cancel</button>
-                    <button @click="showToast = true; setTimeout(() => showToast = false, 3000)"
+                    <button @click="saveSettings()"
                             class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                     </button>
@@ -524,7 +544,7 @@
                 <!-- Save / Cancel -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
                     <button class="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors">Cancel</button>
-                    <button @click="showToast = true; setTimeout(() => showToast = false, 3000)"
+                    <button @click="saveSettings()"
                             class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                     </button>
@@ -650,7 +670,7 @@
                 <!-- Save / Cancel -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
                     <button class="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors">Cancel</button>
-                    <button @click="showToast = true; setTimeout(() => showToast = false, 3000)"
+                    <button @click="saveSettings()"
                             class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                     </button>
@@ -808,7 +828,7 @@
                 <!-- Save / Cancel -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
                     <button class="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors">Cancel</button>
-                    <button @click="showToast = true; setTimeout(() => showToast = false, 3000)"
+                    <button @click="saveSettings()"
                             class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                     </button>
@@ -994,7 +1014,7 @@
                 <!-- Save / Cancel -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
                     <button class="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors">Cancel</button>
-                    <button @click="showToast = true; setTimeout(() => showToast = false, 3000)"
+                    <button @click="saveSettings()"
                             class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                     </button>
@@ -1166,7 +1186,7 @@
                 <!-- Save / Cancel -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
                     <button class="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors">Cancel</button>
-                    <button @click="showToast = true; setTimeout(() => showToast = false, 3000)"
+                    <button @click="saveSettings()"
                             class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                     </button>
@@ -1209,6 +1229,60 @@
 </div>
 
 <script>
+    function settingsApp() {
+        return {
+            sidebarOpen: true,
+            mobileSidebar: false,
+            activeTab: 'general',
+            showToast: false,
+            loading: false,
+            saving: false,
+            settings: {},
+            settingValues: {},
+
+            async init() {
+                await this.fetchSettings();
+                this.$nextTick(() => lucide.createIcons());
+            },
+
+            async fetchSettings() {
+                this.loading = true;
+                const d = await apiGet('/admin/settings');
+                if (d) {
+                    const groups = {};
+                    const vals = {};
+                    const items = d.data || d || [];
+                    items.forEach(s => {
+                        if (!groups[s.group_name]) groups[s.group_name] = [];
+                        groups[s.group_name].push(s);
+                        vals[s.key] = s.value || '';
+                    });
+                    this.settings = groups;
+                    this.settingValues = vals;
+                }
+                this.loading = false;
+            },
+
+            async saveSettings() {
+                this.saving = true;
+                const payload = Object.entries(this.settingValues).map(([key, value]) => ({ key, value: String(value) }));
+                const res = await apiPut('/admin/settings', { settings: payload });
+                this.saving = false;
+                if (res !== null) {
+                    this.showToast = true;
+                    setTimeout(() => this.showToast = false, 3000);
+                }
+            },
+
+            getVal(key) {
+                return this.settingValues[key] || '';
+            },
+
+            setVal(key, val) {
+                this.settingValues[key] = val;
+            }
+        };
+    }
     document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
     document.addEventListener('alpine:updated', () => { lucide.createIcons(); });
 </script>

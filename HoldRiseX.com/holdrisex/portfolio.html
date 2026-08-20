@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: localStorage.getItem('theme') !== 'light' }" :class="{ 'dark': darkMode }" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoldRiseX - My Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+                        dark: { 100:'#374151',200:'#1F2937',300:'#111827',400:'#0F172A',500:'#0B1120' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="user-api.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+        html:not(.dark) body { background: #f3f4f6; color: #111827; }
+        html:not(.dark) .bg-dark-300 { background: #f9fafb; }
+        html:not(.dark) .bg-dark-400 { background: #ffffff; }
+        html:not(.dark) .border-gray-800 { border-color: #e5e7eb; }
+        html:not(.dark) .text-gray-200, html:not(.dark) .text-gray-300, html:not(.dark) .text-gray-400 { color: #4b5563; }
+        html:not(.dark) .hover\:bg-dark-200:hover { background: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-dark-300 text-gray-200 font-sans min-h-screen"
+      x-data="portfolioPage()" x-init="init()" x-cloak>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/60 z-40 md:hidden" x-transition.opacity style="display:none"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="fixed top-0 left-0 h-full w-72 bg-dark-400 border-r border-gray-800 z-50 flex flex-col transition-transform duration-300"
+           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+
+        <!-- Logo -->
+        <div class="h-16 flex items-center justify-between px-5 border-b border-gray-800">
+            <a href="index.html" class="flex items-center gap-2">
+                <span class="text-xl font-extrabold tracking-tight text-white">Hold<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">RiseX</span></span>
+            </a>
+            <button @click="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-5 border-b border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white truncate" x-text="user?.name || 'User'"></p>
+                    <p class="text-xs text-gray-400 truncate" x-text="user?.email || ''"></p>
+                </div>
+            </div>
+            <div class="mt-3 bg-dark-300 rounded-lg p-3">
+                <p class="text-xs text-gray-400">Available Balance</p>
+                <p class="text-lg font-bold text-white" x-text="formatCurrency(dash?.balance)"></p>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <!-- Overview -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mb-2">Overview</p>
+            <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+            </a>
+            <a href="statement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Account Statement
+            </a>
+
+            <!-- Trading -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Trading & Markets</p>
+            <a href="trade.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="activity" class="w-4 h-4"></i> Live Markets
+                <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium">Live</span>
+            </a>
+            <a href="copy.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="copy" class="w-4 h-4"></i> Copy Trading
+                <span class="ml-auto text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-medium">Pro</span>
+            </a>
+
+            <!-- Investments -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Portfolio</p>
+            <a href="plans.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="briefcase" class="w-4 h-4"></i> Investment Plans
+            </a>
+            <a href="portfolio.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i> My Portfolio
+            </a>
+
+            <!-- Wallet -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Wallet & Funds</p>
+            <a href="deposit.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="arrow-down-circle" class="w-4 h-4"></i> Deposit Funds
+            </a>
+            <a href="withdraw.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Withdraw Funds
+            </a>
+
+            <!-- Account -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Account</p>
+            <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="settings" class="w-4 h-4"></i> Profile Settings
+            </a>
+            <a href="kyc.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification
+                <span class="ml-auto text-[10px]" :class="dash?.kyc_status === 'verified' ? 'bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium' : 'bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium'" x-text="dash?.kyc_status === 'verified' ? 'Verified' : 'Pending'"></span>
+            </a>
+            <a href="referrals.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="users" class="w-4 h-4"></i> Referral Program
+                <span class="ml-auto text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">5%</span>
+            </a>
+            <a href="support.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="headphones" class="w-4 h-4"></i> Support
+            </a>
+
+            <!-- Sign Out -->
+            <div class="pt-4 mt-4 border-t border-gray-800">
+                <button @click="userLogout()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition w-full">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="md:ml-64 min-h-screen flex flex-col">
+
+        <!-- TOP NAVBAR -->
+        <nav class="sticky top-0 z-40 bg-dark-400/95 backdrop-blur-xl border-b border-gray-800">
+            <div class="flex items-center justify-between h-16 px-4 lg:px-6">
+                <!-- Mobile hamburger -->
+                <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 text-gray-400 hover:text-white">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Desktop spacer -->
+                <div class="hidden md:block"></div>
+
+                <!-- Center: Balance -->
+                <div class="flex items-center gap-4">
+                    <div class="bg-dark-300 rounded-xl px-5 py-2 flex items-center gap-3 border border-gray-800">
+                        <div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-4 h-4 text-green-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase">Balance</p>
+                            <p class="text-sm font-bold text-white" x-text="formatCurrency(dash?.balance)"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Actions -->
+                <div class="flex items-center gap-3">
+                    <!-- Quick Actions -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition hidden sm:block">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <a href="deposit.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-down-circle" class="w-4 h-4 text-green-400"></i> Deposit</a>
+                            <a href="withdraw.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-up-circle" class="w-4 h-4 text-red-400"></i> Withdraw</a>
+                            <a href="trade.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="activity" class="w-4 h-4 text-blue-400"></i> Trade</a>
+                        </div>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button @click="toggleTheme()" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition">
+                        <i :data-lucide="darkMode ? 'sun' : 'moon'" class="w-5 h-5"></i>
+                    </button>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-dark-300 transition">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                            <span class="text-sm text-gray-300 hidden sm:block" x-text="user?.name?.split(' ')[0] || 'User'"></span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <div class="px-4 py-2 border-b border-gray-800">
+                                <p class="text-sm font-semibold text-white" x-text="user?.name || 'User'"></p>
+                                <p class="text-xs text-gray-400" x-text="user?.email || ''"></p>
+                            </div>
+                            <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="settings" class="w-4 h-4"></i> Profile Settings</a>
+                            <a href="kyc.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification</a>
+                            <div class="border-t border-gray-800 mt-1 pt-1">
+                                <button @click="userLogout()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 p-4 lg:p-6">
+
+            <!-- Loading State -->
+            <div x-show="loading" class="flex items-center justify-center py-20">
+                <div class="text-center">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="mt-3 text-gray-400 text-sm">Loading portfolio...</p>
+                </div>
+            </div>
+
+            <div x-show="!loading">
+                <!-- Page Header -->
+                <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">My Portfolio</h1>
+                        <p class="text-sm text-gray-400 mt-1">Track your investments and earnings</p>
+                    </div>
+                    <a href="plans.html" class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-indigo-700 transition shadow-lg shadow-blue-500/20">
+                        <i data-lucide="plus" class="w-4 h-4"></i> New Investment
+                    </a>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Total Invested -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><i data-lucide="briefcase" class="w-5 h-5 text-blue-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Total Invested</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="formatCurrency(stats?.total_invested)"></p>
+                    </div>
+                    <!-- Total Earned -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center"><i data-lucide="trending-up" class="w-5 h-5 text-green-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Total Earned</span>
+                        </div>
+                        <p class="text-xl font-bold text-green-400" x-text="formatCurrency(stats?.total_earned)"></p>
+                    </div>
+                    <!-- Active Investments -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center"><i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Active</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="stats?.active_investments || 0"></p>
+                    </div>
+                    <!-- Completed -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center"><i data-lucide="check-circle" class="w-5 h-5 text-purple-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Completed</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="stats?.completed_investments || 0"></p>
+                    </div>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="flex items-center gap-2 mb-6 border-b border-gray-800 pb-3">
+                    <button @click="filter = 'all'" class="px-4 py-2 rounded-lg text-sm font-medium transition" :class="filter === 'all' ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:text-white hover:bg-dark-400'">
+                        All
+                        <span class="ml-1.5 text-[11px]" x-text="'(' + investments.length + ')'"></span>
+                    </button>
+                    <button @click="filter = 'active'" class="px-4 py-2 rounded-lg text-sm font-medium transition" :class="filter === 'active' ? 'bg-green-500/10 text-green-400' : 'text-gray-400 hover:text-white hover:bg-dark-400'">
+                        Active
+                        <span class="ml-1.5 text-[11px]" x-text="'(' + investments.filter(i => i.status === 'active').length + ')'"></span>
+                    </button>
+                    <button @click="filter = 'completed'" class="px-4 py-2 rounded-lg text-sm font-medium transition" :class="filter === 'completed' ? 'bg-purple-500/10 text-purple-400' : 'text-gray-400 hover:text-white hover:bg-dark-400'">
+                        Completed
+                        <span class="ml-1.5 text-[11px]" x-text="'(' + investments.filter(i => i.status === 'completed').length + ')'"></span>
+                    </button>
+                </div>
+
+                <!-- Investments Table -->
+                <div x-show="filteredInvestments().length > 0" class="bg-dark-400 border border-gray-800 rounded-xl overflow-hidden mb-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-gray-400 text-xs uppercase border-b border-gray-800">
+                                    <th class="p-4 pr-4">Plan</th>
+                                    <th class="p-4 pr-4">Amount</th>
+                                    <th class="p-4 pr-4 hidden sm:table-cell">Daily ROI</th>
+                                    <th class="p-4 pr-4 hidden md:table-cell">Earned</th>
+                                    <th class="p-4 pr-4 hidden lg:table-cell">Start Date</th>
+                                    <th class="p-4 pr-4 hidden lg:table-cell">End Date</th>
+                                    <th class="p-4 pr-4">Status</th>
+                                    <th class="p-4">Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="inv in filteredInvestments()" :key="inv.id">
+                                    <tr class="border-b border-gray-800/50 hover:bg-dark-300 transition">
+                                        <!-- Plan -->
+                                        <td class="p-4 pr-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="inv.status === 'active' ? 'bg-green-500/10' : 'bg-purple-500/10'">
+                                                    <i :data-lucide="inv.status === 'active' ? 'trending-up' : 'check-circle'" class="w-4 h-4" :class="inv.status === 'active' ? 'text-green-400' : 'text-purple-400'"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-white" x-text="inv.plan?.name || 'Plan'"></p>
+                                                    <p class="text-[11px] text-gray-500 sm:hidden" x-text="inv.plan?.daily_return + '% daily'"></p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <!-- Amount -->
+                                        <td class="p-4 pr-4 font-medium text-white" x-text="formatCurrency(inv.amount)"></td>
+                                        <!-- Daily ROI -->
+                                        <td class="p-4 pr-4 text-green-400 font-medium hidden sm:table-cell" x-text="inv.plan?.daily_return + '%'"></td>
+                                        <!-- Earned -->
+                                        <td class="p-4 pr-4 hidden md:table-cell">
+                                            <span class="font-medium" :class="(inv.total_earned || 0) > 0 ? 'text-green-400' : 'text-gray-500'" x-text="formatCurrency(inv.total_earned)"></span>
+                                        </td>
+                                        <!-- Start Date -->
+                                        <td class="p-4 pr-4 text-gray-400 hidden lg:table-cell" x-text="formatDate(inv.start_date)"></td>
+                                        <!-- End Date -->
+                                        <td class="p-4 pr-4 text-gray-400 hidden lg:table-cell" x-text="formatDate(inv.end_date)"></td>
+                                        <!-- Status -->
+                                        <td class="p-4 pr-4">
+                                            <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+                                                  :class="{
+                                                      'bg-green-500/10 text-green-400': inv.status === 'active',
+                                                      'bg-purple-500/10 text-purple-400': inv.status === 'completed',
+                                                      'bg-yellow-500/10 text-yellow-400': inv.status === 'pending',
+                                                      'bg-red-500/10 text-red-400': inv.status === 'cancelled' || inv.status === 'failed'
+                                                  }"
+                                                  x-text="inv.status?.charAt(0)?.toUpperCase() + inv.status?.slice(1)"></span>
+                                        </td>
+                                        <!-- Progress -->
+                                        <td class="p-4">
+                                            <div class="w-full min-w-[100px] max-w-[140px]">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="text-[11px] text-gray-500" x-text="getProgress(inv) + '%'"></span>
+                                                    <span class="text-[11px] text-gray-500 hidden sm:inline" x-text="getDaysElapsed(inv) + '/' + (inv.plan?.duration_days || '?') + 'd'"></span>
+                                                </div>
+                                                <div class="w-full h-2 bg-dark-100 rounded-full overflow-hidden">
+                                                    <div class="h-full rounded-full transition-all duration-500"
+                                                         :class="inv.status === 'completed' ? 'bg-purple-500' : 'bg-gradient-to-r from-blue-500 to-cyan-400'"
+                                                         :style="'width: ' + getProgress(inv) + '%'"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="filteredInvestments().length === 0" class="bg-dark-400 border border-gray-800 rounded-xl p-12 text-center">
+                    <div class="w-16 h-16 rounded-full bg-dark-300 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="pie-chart" class="w-8 h-8 text-gray-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2" x-text="filter === 'all' ? 'No investments yet' : filter === 'active' ? 'No active investments' : 'No completed investments'"></h3>
+                    <p class="text-sm text-gray-400 mb-6" x-text="filter === 'all' ? 'Start building your portfolio today' : filter === 'active' ? 'Your active investments will appear here' : 'Completed investments will appear here'"></p>
+                    <a href="plans.html" class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-indigo-700 transition">
+                        <i data-lucide="briefcase" class="w-4 h-4"></i> Browse Plans
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function portfolioPage() {
+            return {
+                user: null,
+                dash: null,
+                stats: null,
+                investments: [],
+                loading: true,
+                sidebarOpen: false,
+                filter: 'all',
+
+                async init() {
+                    if (!requireUserAuth()) return;
+                    this.user = getUserData();
+                    try {
+                        const d = await userApiGet('/user/dashboard');
+                        if (d) this.dash = d;
+                    } catch(e) { console.error(e); }
+
+                    try {
+                        const s = await userApiGet('/user/investments-stats');
+                        if (s) this.stats = s;
+                    } catch(e) { console.error(e); }
+
+                    try {
+                        const r = await userApiGet('/user/investments');
+                        if (r) {
+                            this.investments = Array.isArray(r) ? r : (r.data || []);
+                        }
+                    } catch(e) { console.error(e); }
+
+                    this.loading = false;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                filteredInvestments() {
+                    if (this.filter === 'active') return this.investments.filter(i => i.status === 'active');
+                    if (this.filter === 'completed') return this.investments.filter(i => i.status === 'completed');
+                    return this.investments;
+                },
+
+                getProgress(inv) {
+                    if (inv.status === 'completed') return 100;
+                    if (!inv.start_date || !inv.end_date || !inv.plan?.duration_days) return 0;
+                    const now = new Date();
+                    const start = new Date(inv.start_date);
+                    const end = new Date(inv.end_date);
+                    const total = end - start;
+                    if (total <= 0) return 100;
+                    const elapsed = now - start;
+                    return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+                },
+
+                getDaysElapsed(inv) {
+                    if (!inv.start_date) return 0;
+                    const now = new Date();
+                    const start = new Date(inv.start_date);
+                    return Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
+                },
+
+                toggleTheme() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+                    this.$nextTick(() => lucide.createIcons());
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+        document.addEventListener('alpine:updated', () => lucide.createIcons());
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
@@ -131,15 +131,16 @@
         }
     </style>
 
-    <title>HoldRiseX | CFD Trading â€” Trading on Stocks, Gold, Oil, Indices</title>
-    <link rel="manifest" href="index.html">
+    <title>HoldRiseX | CFD Trading — Trading on Stocks, Gold, Oil, Indices</title>
+    <link href="favicon.svg" rel="icon" type="image/svg+xml" />
+
     <meta name="theme-color" content="#111827">    <meta property="x-session-id" content="ghJjEOrjZ3KUPun1UQksVUbvK88y21dgIhKtb8GT">
     <meta property="og:site_name" content="HoldRiseX">
     <meta property="og:description" content="CFD Trading with HoldRiseX. Trading on Stocks, Gold, Oil, Indices with ultra-fast execution &amp; spreads from 0.0 pips. News, articles and training materials for experienced and novice traders.">
     <meta name="description" content="CFD Trading with HoldRiseX. Trading on Stocks, Gold, Oil, Indices with ultra-fast execution &amp; spreads from 0.0 pips. News, articles and training materials for experienced and novice traders.">
     <meta name="keywords" content="forex, CFDs, CFD, Bitcoin trading, crypto trading, online trading, Forex trading, Oil trading, Gold trading, trading indexes, shares trading, commodities trading, trading platform, Cryptocurrencies day trading">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="CFD Trading â€” Trading on Stocks, Gold, Oil, Indices | HoldRiseX">
+    <meta property="og:title" content="CFD Trading — Trading on Stocks, Gold, Oil, Indices | HoldRiseX">
     <meta property="og:image" content="img/share.jpg">
 
     <!-- Favicon -->
@@ -198,6 +199,7 @@
             }
         });
     </script>
+    <script src="user-api.js"></script>
 </head>
 
 <body class="antialiased text-gray-200 bg-gray-900 font-sans min-h-screen flex flex-col">
@@ -571,9 +573,9 @@
                                 </div>
                                 <div class="text-xs text-gray-400 flex items-center">
                                     <span>Real-time data</span>
-                                    <span class="mx-1">â€¢</span>
+                                    <span class="mx-1">•</span>
                                     <span x-text="'Vol: $' + (volume ? (volume/1000000000).toFixed(1) + 'B' : '24.8B')"></span>
-                                    <span class="mx-1">â€¢</span>
+                                    <span class="mx-1">•</span>
                                     <span>Updated <span x-text="new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})"></span></span>
                                 </div>
                             </div>
@@ -1265,7 +1267,7 @@
             <!-- Bitcoin Card -->
             <div class="bg-dark-400 rounded-xl overflow-hidden group hover:shadow-xl transition duration-300 transform hover:-translate-y-1 border border-gray-800">
                 <div class="h-24 bg-gradient-to-r from-orange-500 to-yellow-500 flex items-center justify-center">
-                    <img src="https://HoldRiseX.com/holdrisex/dash/bitcoin-btc-logo.png" alt="Bitcoin" class="h-16 w-16">
+                    <img src="temp/custom/img/btc.png" alt="Bitcoin" class="h-16 w-16">
                 </div>
                 <div class="p-6">
                     <h3 class="text-xl font-bold text-white mb-2">Bitcoin</h3>
@@ -1285,7 +1287,7 @@
             <!-- Ethereum Card -->
             <div class="bg-dark-400 rounded-xl overflow-hidden group hover:shadow-xl transition duration-300 transform hover:-translate-y-1 border border-gray-800">
                 <div class="h-24 bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
-                    <img src="https://HoldRiseX.com/holdrisex/dash/ethereum-eth-logo.png" alt="Ethereum" class="h-16 w-16">
+                    <img src="temp/custom/img/eth.png" alt="Ethereum" class="h-16 w-16">
                 </div>
                 <div class="p-6">
                     <h3 class="text-xl font-bold text-white mb-2">Ethereum</h3>
@@ -1392,7 +1394,7 @@
                 <div class="bg-dark-300 rounded-lg p-6 border border-gray-800">
                     <h3 class="text-xl font-semibold text-white mb-3">About Bitcoin</h3>
                     <p class="text-gray-400">
-                        Bitcoin (Ã¢â€šÂ¿) is a decentralized digital currency that operates without a central authority. Transactions are verified by network nodes through cryptography and recorded on a public distributed ledger called a blockchain. Created in 2008 by an unknown person or group using the name Satoshi Nakamoto, Bitcoin pioneered the concept of cryptocurrencies.
+                        Bitcoin (₿) is a decentralized digital currency that operates without a central authority. Transactions are verified by network nodes through cryptography and recorded on a public distributed ledger called a blockchain. Created in 2008 by an unknown person or group using the name Satoshi Nakamoto, Bitcoin pioneered the concept of cryptocurrencies.
                     </p>
                 </div>
 
@@ -1589,7 +1591,7 @@
 <!-- About Us Section -->
 <section class="py-16 bg-gradient-to-b from-dark-400 to-dark-500 relative">
     <!-- Background overlay with image -->
-    <div class="absolute inset-0 opacity-20" style="background-image: url(https://HoldRiseX.com/holdrisex/temp/custom/img/abt.png); background-position: center; background-repeat: no-repeat; background-size: cover;"></div>
+    <div class="absolute inset-0 opacity-20" style="background-image: url(temp/custom/img/abt.png); background-position: center; background-repeat: no-repeat; background-size: cover;"></div>
 
     <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="mb-10 text-center">
@@ -1645,7 +1647,7 @@
 
 
 
-<!-- Start Pricing Trading on the Forex market is a legitimate and straightforward way of generating income. And the good news is that you donÃ¢â‚¬â„¢t have to be a professional trader in order to make money. All you need is the right personality and the right skill set and you can make money trading on foreign exchanges. HoldRiseX lets you trade in the way that best suits you. Do you want to risk a little or a lot? Do you want gains in the short term or are you playing a longer game? Are you a day trader, a swing trader or a scalper? Are you an old hand or a rookie just testing the water? It does not matter because HoldRiseX puts you in control.If you can control todayÃ¢â‚¬â„¢s success and not let it cloud tomorrowÃ¢â‚¬â„¢s judgment, you probably have it in you to make money as a currency trader. The prizes in Forex are certainly glittering but it is level headedness and persistence that win the day. With the right tools, information and access to all the worldÃ¢â‚¬â„¢s currencies, HoldRiseX puts you in control of the trades you make. </p> </li> </center></ul></div>
+<!-- Start Pricing Trading on the Forex market is a legitimate and straightforward way of generating income. And the good news is that you don't have to be a professional trader in order to make money. All you need is the right personality and the right skill set and you can make money trading on foreign exchanges. HoldRiseX lets you trade in the way that best suits you. Do you want to risk a little or a lot? Do you want gains in the short term or are you playing a longer game? Are you a day trader, a swing trader or a scalper? Are you an old hand or a rookie just testing the water? It does not matter because HoldRiseX puts you in control. If you can control today's success and not let it cloud tomorrow's judgment, you probably have it in you to make money as a currency trader. The prizes in Forex are certainly glittering but it is level headedness and persistence that win the day. With the right tools, information and access to all the world's currencies, HoldRiseX puts you in control of the trades you make. </p> </li> </center></ul></div>
 
 
 
@@ -1670,7 +1672,7 @@
         </div>
 
         <div class="overflow-hidden">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            <div id="plans-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6"
                  x-data="{ activeTab: 'monthly' }"
                  x-init="function() { window.addEventListener('resize', () => { if (window.innerWidth < 768) { document.getElementById('plans-container').scrollLeft = 0; } }) }">
 
@@ -2041,7 +2043,7 @@
                     <p class="text-gray-300">Our team can create tailored investment solutions for institutional clients and high-net-worth individuals.</p>
                 </div>
                 <div>
-                    <a href="contact.html" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg transition duration-300 transform hover:-translate-y-1">
+                    <a href="contacts.html" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg transition duration-300 transform hover:-translate-y-1">
                         Contact Our Team
                         <svg class="ml-2 -mr-1 w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -2411,7 +2413,7 @@
             <!-- Left: Image Column -->
             <div class="relative group overflow-hidden rounded-xl shadow-2xl" x-data="{}" x-init="setTimeout(() => { $el.classList.add('opacity-100'); $el.classList.remove('opacity-0'); }, 100)" class="opacity-0 transition-opacity duration-700">
                 <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-blue-900/20 rounded-xl transform rotate-1 group-hover:rotate-0 transition-all duration-300 opacity-70"></div>
-                <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/commission-scheme-crypt1t1.png" alt="Trading Commission Scheme" class="relative z-10 rounded-xl w-full transform transition-all duration-500 group-hover:scale-105">
+                <img src="temp/custom/img/commission-scheme-crypt1t1.png" alt="Trading Commission Scheme" class="relative z-10 rounded-xl w-full transform transition-all duration-500 group-hover:scale-105">
                 <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 p-4">
                     <p class="text-sm text-blue-300 text-center">Competitive commission structure for all traders</p>
                 </div>
@@ -2490,19 +2492,19 @@
                 <h3 class="text-xl font-bold text-white mb-4">Market Analysis</h3>
                 <ul class="space-y-3 text-gray-300">
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Daily Market Analysis</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Weekly Live Webinars</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Live Q & A Sessions</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Trading Strategy Support</span>
                     </li>
                 </ul>
@@ -2516,19 +2518,19 @@
                 <h3 class="text-xl font-bold text-white mb-4">Award-Winning Broker</h3>
                 <ul class="space-y-3 text-gray-300">
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>42+ Industry Awards</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Top 100 Companies</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Best Client Funds Security Global</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Best Forex News & Analysis Provider</span>
                     </li>
                 </ul>
@@ -2542,19 +2544,19 @@
                 <h3 class="text-xl font-bold text-white mb-4">Investment Options</h3>
                 <ul class="space-y-3 text-gray-300">
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>BA Copy - How it Works</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Become a Follower</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>PAMM Ranking</span>
                     </li>
                     <li class="flex items-start">
-                        <span class="flex-shrink-0 text-blue-400 mr-2">Ã¢â‚¬Â¢</span>
+                        <span class="flex-shrink-0 text-blue-400 mr-2"></span>
                         <span>Become an Investor</span>
                     </li>
                 </ul>
@@ -2645,7 +2647,7 @@
                         <p class="text-gray-300 leading-relaxed text-sm">Since I started using HoldRiseX, I have been earning like never before. You guys have the best signals.</p>
                     </div>
                     <div class="flex items-center">
-                        <img src="https://HoldRiseX.com/holdrisex/temp/custom/imge2.jpg" alt="Malcom47" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
+                        <img src="temp/custom/imge2.jpg" alt="Malcom47" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
                         <div class="ml-3">
                             <h4 class="text-white font-semibold text-sm">Malcom47</h4>
                             <p class="text-blue-400 text-xs">Verified Trader</p>
@@ -2688,7 +2690,7 @@
                         <p class="text-gray-300 leading-relaxed text-sm">I already got more than $200,000 within a month investing with HoldRiseX. Will again invest soon.</p>
                     </div>
                     <div class="flex items-center">
-                        <img src="https://HoldRiseX.com/holdrisex/temp/custom/imge1.jpg" alt="Christy" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
+                        <img src="temp/custom/imge1.jpg" alt="Christy" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
                         <div class="ml-3">
                             <h4 class="text-white font-semibold text-sm">Christy</h4>
                             <p class="text-emerald-400 text-xs">Elite Investor</p>
@@ -2731,7 +2733,7 @@
                         <p class="text-gray-300 leading-relaxed text-sm">I was able to earn additional $30,000 to my profit. It's amazing, you guys are the best, keep it up.</p>
                     </div>
                     <div class="flex items-center">
-                        <img src="https://HoldRiseX.com/holdrisex/temp/custom/imge3.jpg" alt="Linday8" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
+                        <img src="temp/custom/imge3.jpg" alt="Linday8" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
                         <div class="ml-3">
                             <h4 class="text-white font-semibold text-sm">Linday8</h4>
                             <p class="text-blue-400 text-xs">Professional Trader</p>
@@ -2774,7 +2776,7 @@
                         <p class="text-gray-300 leading-relaxed text-sm">This was a very easy process and I received my funds quickly as I needed them! Highly recommend HoldRiseX.</p>
                     </div>
                     <div class="flex items-center">
-                        <img src="https://HoldRiseX.com/holdrisex/temp/custom/imge4.jpg" alt="Crian" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
+                        <img src="temp/custom/imge4.jpg" alt="Crian" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
                         <div class="ml-3">
                             <h4 class="text-white font-semibold text-sm">Crian</h4>
                             <p class="text-emerald-400 text-xs">Active Trader</p>
@@ -2804,7 +2806,7 @@
                             <p class="text-gray-300 leading-relaxed text-sm">I rate HoldRiseX five stars because of the service, you register online, upload ID and you deposit and withdraw after trades. This is so lovely.</p>
                         </div>
                         <div class="flex items-center">
-                            <img src="https://HoldRiseX.com/holdrisex/temp/custom/imge5.jpg" alt="Claudia" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
+                            <img src="temp/custom/imge5.jpg" alt="Claudia" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
                             <div class="ml-3">
                                 <h4 class="text-white font-semibold text-sm">Claudia</h4>
                                 <p class="text-blue-400 text-xs">Satisfied Investor</p>
@@ -2826,7 +2828,7 @@
                             <p class="text-gray-300 leading-relaxed text-sm">I am very pleased with the customer service. Also online service is great and easy thank you HoldRiseX team.</p>
                         </div>
                         <div class="flex items-center">
-                            <img src="https://HoldRiseX.com/holdrisex/temp/custom/jenny.jpg" alt="Jenny" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
+                            <img src="temp/custom/jenny.jpg" alt="Jenny" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
                             <div class="ml-3">
                                 <h4 class="text-white font-semibold text-sm">Jenny</h4>
                                 <p class="text-emerald-400 text-xs">Premium Member</p>
@@ -2848,7 +2850,7 @@
                             <p class="text-gray-300 leading-relaxed text-sm">I'm happy, that in difficult times there are people that will support you and help you make more money, thank you HoldRiseX for giving me a chance.</p>
                         </div>
                         <div class="flex items-center">
-                            <img src="https://HoldRiseX.com/holdrisex/temp/custom/mike.jpg" alt="Mike" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
+                            <img src="temp/custom/mike.jpg" alt="Mike" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
                             <div class="ml-3">
                                 <h4 class="text-white font-semibold text-sm">Mike</h4>
                                 <p class="text-blue-400 text-xs">Regular Investor</p>
@@ -2870,7 +2872,7 @@
                             <p class="text-gray-300 leading-relaxed text-sm">I've invested with HoldRiseX several times, always paid back on time. The entire trade process is complete in just a few days. Very impressed and satisfied.</p>
                         </div>
                         <div class="flex items-center">
-                            <img src="https://HoldRiseX.com/holdrisex/temp/custom/kathy.jpg" alt="Kathy" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
+                            <img src="temp/custom/kathy.jpg" alt="Kathy" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-500">
                             <div class="ml-3">
                                 <h4 class="text-white font-semibold text-sm">Kathy</h4>
                                 <p class="text-emerald-400 text-xs">Long-term Client</p>
@@ -2906,49 +2908,49 @@
         <!-- Bitcoin -->
         <div class="w-1/4 sm:w-1/6 md:w-1/7 transform hover:scale-110 transition-transform duration-300">
           <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500">
-            <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/btc.png" alt="Bitcoin" class="w-full h-auto filter drop-shadow-lg">
+            <img src="temp/custom/img/btc.png" alt="Bitcoin" class="w-full h-auto filter drop-shadow-lg">
           </div>
         </div>
 
         <!-- Ethereum -->
         <div class="w-1/4 sm:w-1/6 md:w-1/7 transform hover:scale-110 transition-transform duration-300">
           <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500">
-            <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/eth.png" alt="Ethereum" class="w-full h-auto filter drop-shadow-lg">
+            <img src="temp/custom/img/eth.png" alt="Ethereum" class="w-full h-auto filter drop-shadow-lg">
           </div>
         </div>
 
         <!-- Dogecoin -->
         <div class="w-1/4 sm:w-1/6 md:w-1/7 transform hover:scale-110 transition-transform duration-300">
           <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500">
-            <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/doge.png" alt="Dogecoin" class="w-full h-auto filter drop-shadow-lg">
+            <img src="temp/custom/img/doge.png" alt="Dogecoin" class="w-full h-auto filter drop-shadow-lg">
           </div>
         </div>
 
         <!-- Bitcoin Cash -->
         <div class="w-1/4 sm:w-1/6 md:w-1/7 transform hover:scale-110 transition-transform duration-300">
           <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500">
-            <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/bch.png" alt="Bitcoin Cash" class="w-full h-auto filter drop-shadow-lg">
+            <img src="temp/custom/img/bch.png" alt="Bitcoin Cash" class="w-full h-auto filter drop-shadow-lg">
           </div>
         </div>
 
         <!-- Tether -->
         <div class="w-1/4 sm:w-1/6 md:w-1/7 transform hover:scale-110 transition-transform duration-300">
           <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500">
-            <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/usdt.png" alt="Tether" class="w-full h-auto filter drop-shadow-lg">
+            <img src="temp/custom/img/usdt.png" alt="Tether" class="w-full h-auto filter drop-shadow-lg">
           </div>
         </div>
 
         <!-- Binance Coin -->
         <div class="w-1/4 sm:w-1/6 md:w-1/7 transform hover:scale-110 transition-transform duration-300">
           <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500">
-            <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/bnb.png" alt="Binance Coin" class="w-full h-auto filter drop-shadow-lg">
+            <img src="temp/custom/img/bnb.png" alt="Binance Coin" class="w-full h-auto filter drop-shadow-lg">
           </div>
         </div>
 
         <!-- Litecoin -->
         <div class="w-1/4 sm:w-1/6 md:w-1/7 transform hover:scale-110 transition-transform duration-300">
           <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500">
-            <img src="https://HoldRiseX.com/holdrisex/temp/custom/img/ltc.png" alt="Litecoin" class="w-full h-auto filter drop-shadow-lg">
+            <img src="temp/custom/img/ltc.png" alt="Litecoin" class="w-full h-auto filter drop-shadow-lg">
           </div>
         </div>
       </div>
@@ -2956,7 +2958,7 @@
   </div>
 </section>
 
-<script type=text/javascript> var host = 'h51.p.ctrader.com';</script><script src="https://HoldRiseX.com/holdrisex/temp/custom/js/spreads-home.js" type=module></script>
+<script type="text/javascript"> var host = 'h51.p.ctrader.com';</script><script src="temp/custom/js/spreads-home.js" type=module></script>
 
 </main>
 
@@ -3028,7 +3030,7 @@
                             <li><a href="login.html" class="text-sm text-gray-400 hover:text-white transition">Log In</a></li>
                             <li><a href="register.html" class="text-sm text-gray-400 hover:text-white transition">Create Account</a></li>
                             <li><a href="login.html" class="text-sm text-gray-400 hover:text-white transition">Demo Account</a></li>
-                            <li><a href="contact.html" class="text-sm text-gray-400 hover:text-white transition">Help Center</a></li>
+                            <li><a href="contacts.html" class="text-sm text-gray-400 hover:text-white transition">Help Center</a></li>
                         </ul>
                     </div>
                 </div>
@@ -3190,5 +3192,59 @@
     });
 </script>
 
+<script>
+    (function loadPublicInvestmentPlans() {
+        const apiBase = window.location.protocol === 'file:'
+            ? 'http://127.0.0.1:8000/api'
+            : `${window.location.origin}/api`;
+        const plansContainer = document.getElementById('plans-container');
+
+        if (!plansContainer) return;
+
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        })[character]);
+        const currency = (value) => '$' + Number(value || 0).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        });
+
+        async function renderPlans() {
+            try {
+                const response = await fetch(`${apiBase}/plans`, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Unable to load plans');
+                const plans = await response.json();
+
+                plansContainer.innerHTML = plans.map((plan) => `
+                    <article class="relative group">
+                        <div class="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-blue-800/20 rounded-xl transform rotate-1 group-hover:rotate-0 transition-all duration-300 opacity-50"></div>
+                        <div class="relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-700 bg-gray-800 bg-opacity-90 transition-all duration-500 group-hover:-translate-y-1 group-hover:border-blue-600 group-hover:shadow-lg group-hover:shadow-blue-900/20">
+                            <div class="flex h-24 items-center justify-center bg-blue-600 px-4 text-center">
+                                <h3 class="text-xl font-bold uppercase tracking-wider text-white">${escapeHtml(plan.name)}</h3>
+                            </div>
+                            <div class="flex flex-1 flex-col p-6 text-center">
+                                <div class="mb-6"><span class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">${escapeHtml(plan.daily_return)}%</span><span class="ml-1 text-gray-300">/ day</span></div>
+                                <ul class="mb-8 space-y-3 text-sm">
+                                    <li class="text-gray-300">Principal return on maturity</li>
+                                    <li class="text-gray-300">Instant withdrawal</li>
+                                    <li class="text-gray-300">Professional charts</li>
+                                    <li class="border-t border-gray-700 pt-3 font-semibold text-white">${currency(plan.min_amount)} - ${currency(plan.max_amount)}</li>
+                                    <li class="font-semibold text-blue-300">${escapeHtml(plan.duration_days)} day term</li>
+                                </ul>
+                                <p class="mb-6 flex-1 text-sm text-gray-400">${escapeHtml(plan.description || 'A flexible investment plan for your strategy.')}</p>
+                                <a href="${userEntryUrl(`plans.html?plan=${encodeURIComponent(plan.id)}`)}" class="block w-full rounded-lg bg-blue-600 px-4 py-3 text-center font-medium text-white shadow-md transition hover:-translate-y-1 hover:bg-blue-700">View Plan</a>
+                            </div>
+                        </div>
+                    </article>
+                `).join('');
+            } catch (error) {
+                console.error('Unable to load public investment plans:', error);
+            }
+        }
+
+        renderPlans();
+        setInterval(renderPlans, 60000);
+    }());
+</script>
 </body>
 </html>

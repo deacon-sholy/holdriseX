@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" x-data="{ darkMode: localStorage.getItem('theme') === 'light' ? false : true }"
       :class="{ 'dark': darkMode }"
       class="dark bg-gray-300 h-full">
@@ -9,7 +9,7 @@
     <title>HoldRiseX - Sign In</title>
 
     <!-- Favicon -->
-    <link href="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" rel="icon" type="image/x-icon" />
+    <link href="favicon.svg" rel="icon" type="image/svg+xml" />
 
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,88 +103,14 @@
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="user-api.js"></script>
 
+    <meta property="og:site_name" content="HoldRiseX">
+    <meta property="og:title" content="Trading With HoldRiseX" />
+    <meta name="description" content="HoldRiseX - Leading trade and investment company operating in the UK. Services include Forex trading, cryptocurrencies, stocks and commodities investments.">
+    <meta property="og:description" content="HoldRiseX - Leading trade and investment company operating in the UK. Services include Forex trading, cryptocurrencies, stocks and commodities investments.">
+    <meta property="og:type" content="website" />
 
-<!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="temp/custom/css/bootstrap.min.css.html">
-<!-- jQuery library -->
-<script src="https://HoldRiseX.com/holdrisex/temp/custom/js/jquery.min.js"></script>
-<!-- Popper JS -->
-<script src="https://HoldRiseX.com/holdrisex/temp/custom/js/popper.min.js"></script>
-<!-- Latest compiled JavaScript -->
-<script src="https://HoldRiseX.com/holdrisex/temp/custom/js/bootstrap.min.js"></script>
-
-<link href="temp/custom/css/main.css.html" rel="stylesheet"/>
-<!-- <link href="404.html" rel="stylesheet" /> -->
-
-<title>HoldRiseX</title>
-<link rel="manifest" href="temp/custom/js/manifest.json.html">
-<meta name="theme-color" content="#4D7DE6">
-<meta name="msapplication-navbutton-color" content="#4D7DE6">
-<!-- iOS Safari -->
-<meta name="apple-mobile-web-app-status-bar-style" content="#4D7DE6">
-
-
-<meta name="theme-color" content="#4D7DE6">
-<meta name="msapplication-navbutton-color" content="#4D7DE6">
-<!-- iOS Safari -->
-<meta name="apple-mobile-web-app-status-bar-style" content="#4D7DE6">
-
-<link href="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" rel="icon" type="image/x-icon" />
-<!-- <link rel="icon" sizes="192x192" href="404.html"> -->
-
-<meta name="keywords" content="HoldRiseX" />
-<meta property="og:image" content="temp/custom/images/icon/icon-310x310.png" />
-
-<meta name="msapplication-square310x310logo" content="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png">
-<meta name="msapplication-square70x70logo" content="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png">
-<meta name="msapplication-square150x150logo" content="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png">
-<meta name="msapplication-wide310x150logo" content="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png">
-
-<link rel="apple-touch-icon-precomposed" href="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png">
-<!-- <link rel="apple-touch-icon-precomposed" sizes="57x57" href="404.html" /> -->
-<!-- <link rel="apple-touch-icon-precomposed" sizes="72x72" href="404.html" /> -->
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" />
-<link rel="apple-touch-icon-precomposed" sizes="144x144" href="storage/app/public/photos/Pkg1Cu2sXXOy4UVxImSOiMosE3RZkVa74f3AhbZM.png" />
-
-
-<meta property="og:site_name" content="HoldRiseX">
-<meta property="og:title" content="Trading With HoldRiseX" />
-<meta name="description" content="HoldRiseX LIMITED???
-INVEST IN A LEADING
-TRADE AND INVESTMENT
-COMPANY, OPERATING IN
-THE UK.
-SERVICES INCLUDE: FOREX TRADING
-CRYPTOCURRENCIES, STOCKS & COMMODITIES INVESTMENTS. OIL & GAS, REAL ESTATE INVESTMENTS, MARKET
-RESEARCH AND ANALYSIS:
-ASSISTING BOTH INDIVIDUALS & COMPANIES INVEST IN THE
-COMMERCIAL MARKET.TRAINING CLIENTS & INVESTORS TO BECOME
-EXPERTISE.???">
-<meta property="og:description" content="HoldRiseX LIMITED???
-INVEST IN A LEADING
-TRADE AND INVESTMENT
-COMPANY, OPERATING IN
-THE UK.
-SERVICES INCLUDE: FOREX TRADING
-CRYPTOCURRENCIES, STOCKS & COMMODITIES INVESTMENTS. OIL & GAS, REAL ESTATE INVESTMENTS, MARKET
-RESEARCH AND ANALYSIS:
-ASSISTING BOTH INDIVIDUALS & COMPANIES INVEST IN THE
-COMMERCIAL MARKET.TRAINING CLIENTS & INVESTORS TO BECOME
-EXPERTISE.???">
-<meta property="og:type" content="website" />
-
-
-<!-- <link href="404" rel="stylesheet" /> -->
-
-</head>
-
-
-    <style>
-        [x-cloak] { display: none !important; }
-        .skiptranslate { display: none !important; }
-        body { top: 0 !important; }
-    </style>
 </head>
 
 <body class="h-full bg-gray-300 font-sans antialiased transition-colors duration-300 text-gray-900" x-data="{ darkMode: localStorage.theme === 'dark' || !localStorage.theme }" :class="{ 'dark': darkMode }" x-cloak>
@@ -229,17 +155,21 @@ EXPERTISE.???">
             </div>
 
             <!-- Form -->
-            <form action="login" method="post" class="space-y-5">
-                <input type="hidden" name="_token" value="McspoBd3s1o93YNuFjuGeIb90PGjw5EMowmket6K">
+            <form action="#" method="post" class="space-y-5"
+                  x-data="{ email: '', password: '', loading: false, error: '' }"
+                  @submit.prevent="loading = true; error = ''; userApiPostNoAuth('/user/login', { email, password }).then(res => { if (res.status === 200) { setUserToken(res.data.token); setUserData(res.data.user); redirectAfterUserAuth('dashboard.html'); } else { error = res.data.message || 'Login failed.'; loading = false; } }).catch(err => { error = 'Network error. Please try again.'; loading = false; })">
+                <div x-show="error" x-cloak class="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                    <p class="text-xs text-red-300" x-text="error"></p>
+                </div>
 
                 <!-- Email -->
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-300 mb-1.5">Email or Username</label>
+                    <label for="email" class="block text-sm font-medium text-gray-300 mb-1.5">Email Address</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i data-lucide="mail" class="h-4 w-4 text-gray-500"></i>
                         </div>
-                        <input type="text" name="email" id="email" required
+                        <input type="email" name="email" id="email" required x-model="email"
                                class="block w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition"
                                placeholder="you@example.com">
                     </div>
@@ -252,7 +182,7 @@ EXPERTISE.???">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i data-lucide="lock" class="h-4 w-4 text-gray-500"></i>
                         </div>
-                        <input :type="show ? 'text' : 'password'" name="password" id="password" required
+                        <input :type="show ? 'text' : 'password'" name="password" id="password" required x-model="password"
                                class="block w-full pl-10 pr-10 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition"
                                placeholder="Enter your password">
                         <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 transition">
@@ -262,20 +192,15 @@ EXPERTISE.???">
                     </div>
                 </div>
 
-                <!-- Remember & Forgot -->
-                <div class="flex items-center justify-between text-sm">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" name="remember" id="remember" class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500/50">
-                        <span class="text-gray-400">Remember me</span>
-                    </label>
-                    <a href="forgot-password.html" class="text-blue-400 hover:text-blue-300 transition text-sm">Forgot password?</a>
-                </div>
-
                 <!-- Submit -->
-                <button type="submit"
-                        class="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-gray-900">
-                    Sign In
-                    <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                <button type="submit" :disabled="loading"
+                        class="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg x-show="loading" x-cloak class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span x-text="loading ? 'Signing in...' : 'Sign In'"></span>
+                    <i x-show="!loading" data-lucide="arrow-right" class="h-4 w-4"></i>
                 </button>
             </form>
 

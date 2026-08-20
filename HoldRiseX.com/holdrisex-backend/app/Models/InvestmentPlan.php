@@ -34,8 +34,8 @@ class InvestmentPlan extends Model
         ];
     }
 
-    public function investments(): HasMany
+    public function userInvestments(): HasMany
     {
-        return $this->hasMany(Investment::class);
+        return $this->hasMany(UserInvestment::class, 'plan_id');
     }
 }
