@@ -54,4 +54,22 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
+
+    public function profile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated.',
+            'user' => $user->fresh(),
+        ]);
+    }
 }

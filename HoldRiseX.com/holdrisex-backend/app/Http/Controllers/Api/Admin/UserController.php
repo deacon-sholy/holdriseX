@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -102,10 +103,18 @@ class UserController extends Controller
         ]);
     }
 
-    public function toggleStatus($id): JsonResponse
+    public function toggleStatus(Request $request, $id)
     {
         $user = User::findOrFail($id);
         $user->update(['is_active' => !$user->is_active]);
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'user_status_toggled',
+            'details' => "Toggled user #{$user->id} ({$user->email}) to " . ($user->fresh()->is_active ? 'active' : 'suspended'),
+            'ip_address' => $request->ip(),
+            'severity' => 'warning',
+        ]);
 
         return response()->json([
             'message' => 'User status toggled.',
@@ -121,5 +130,18 @@ class UserController extends Controller
             'pending_kyc' => User::where('kyc_status', 'pending')->count(),
             'suspended' => User::where('is_active', false)->count(),
         ]);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->role === 'admin') {
+            return response()->json(['message' => 'Cannot delete admin users.'], 422);
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'User deleted.']);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InvestmentPlan;
+use App\Models\UserInvestment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -15,6 +16,13 @@ class PlanController extends Controller
         $plans = InvestmentPlan::withCount('userInvestments')->orderBy('sort_order')->get();
 
         return response()->json($plans);
+    }
+
+    public function show($id): JsonResponse
+    {
+        $plan = InvestmentPlan::withCount('userInvestments')->findOrFail($id);
+
+        return response()->json($plan);
     }
 
     public function store(Request $request): JsonResponse
@@ -79,6 +87,17 @@ class PlanController extends Controller
     public function destroy($id): JsonResponse
     {
         $plan = InvestmentPlan::findOrFail($id);
+
+        $activeCount = UserInvestment::where('plan_id', $id)
+            ->where('status', 'active')
+            ->count();
+
+        if ($activeCount > 0) {
+            return response()->json([
+                'message' => "Cannot delete plan: {$activeCount} active investment(s) still on this plan. Deactivate it instead.",
+            ], 422);
+        }
+
         $plan->delete();
 
         return response()->json(['message' => 'Plan deleted.']);

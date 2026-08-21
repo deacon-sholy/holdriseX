@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Trade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,13 +55,29 @@ class TradeController extends Controller
 
         $finalPrice = $request->input('close_price', $trade->current_price);
 
+        if ($trade->type === 'buy') {
+            $pnl = ($finalPrice - $trade->entry_price) * $trade->lot_size;
+        } else {
+            $pnl = ($trade->entry_price - $finalPrice) * $trade->lot_size;
+        }
+
         $trade->update([
             'status' => 'closed',
             'current_price' => $finalPrice,
+            'pnl' => round($pnl, 2),
             'closed_at' => now(),
         ]);
 
-        $pnl = $trade->fresh()->pnl;
+        $margin = $trade->entry_price * $trade->lot_size;
+        $trade->user->increment('balance', $margin + $pnl);
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'trade_closed',
+            'details' => "Closed trade #{$trade->id} ({$trade->symbol} {$trade->type}) PnL: $" . number_format($pnl, 2) . " (user: {$trade->user->email})",
+            'ip_address' => $request->ip(),
+            'severity' => $pnl >= 0 ? 'info' : 'warning',
+        ]);
 
         return response()->json([
             'message' => 'Trade closed.',

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -20,10 +21,19 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string',
             'country' => 'nullable|string',
+            'ref' => 'nullable|string',
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
         $validated['role'] = 'user';
+        $validated['referral_code'] = strtoupper(Str::random(8));
+
+        if (!empty($validated['ref'])) {
+            $referrer = User::where('referral_code', $validated['ref'])->first();
+            if ($referrer) {
+                $validated['referred_by'] = $referrer->id;
+            }
+        }
+        unset($validated['ref']);
 
         $user = User::create($validated);
 
@@ -55,6 +65,10 @@ class AuthController extends Controller
 
         if (!$user->is_active) {
             return response()->json(['message' => 'Account is deactivated. Please contact support.'], 403);
+        }
+
+        if (empty($user->referral_code)) {
+            $user->update(['referral_code' => strtoupper(Str::random(8))]);
         }
 
         $user->update(['last_login_at' => now()]);
@@ -105,7 +119,7 @@ class AuthController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password),
+                    'password' => $password,
                     'remember_token' => Str::random(60),
                 ])->save();
             }

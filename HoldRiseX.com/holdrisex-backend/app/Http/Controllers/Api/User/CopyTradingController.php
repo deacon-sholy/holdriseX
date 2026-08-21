@@ -54,6 +54,13 @@ class CopyTradingController extends Controller
 
         $user = $request->user();
 
+        $requiredMargin = $validated['lots'] * 100;
+        if ((float) $user->balance < $requiredMargin) {
+            return response()->json([
+                'message' => 'Insufficient balance. Required: $' . number_format($requiredMargin, 2) . ', Available: $' . number_format($user->balance, 2),
+            ], 422);
+        }
+
         $existingTrade = $user->copyTrades()
             ->where('trader_id', $traderId)
             ->where('symbol', $validated['symbol'])
@@ -63,6 +70,8 @@ class CopyTradingController extends Controller
         if ($existingTrade) {
             return response()->json(['message' => 'You already have an active copy trade for this symbol with this trader.'], 422);
         }
+
+        $user->decrement('balance', $requiredMargin);
 
         $copyTrade = $user->copyTrades()->create([
             'trader_id' => $trader->id,
@@ -102,6 +111,10 @@ class CopyTradingController extends Controller
         $copyTrade->update([
             'status' => 'closed',
         ]);
+
+        $margin = $copyTrade->lots * 100;
+        $pnl = $copyTrade->pnl ?? 0;
+        $copyTrade->user->increment('balance', $margin + $pnl);
 
         $copyTrade->copyTrader->decrement('total_followers');
 

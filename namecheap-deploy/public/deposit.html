@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: localStorage.getItem('theme') !== 'light' }" :class="{ 'dark': darkMode }" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoldRiseX - Deposit Funds</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+                        dark: { 100:'#374151',200:'#1F2937',300:'#111827',400:'#0F172A',500:'#0B1120' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="user-api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+        html:not(.dark) body { background: #f3f4f6; color: #111827; }
+        html:not(.dark) .bg-dark-300 { background: #f9fafb; }
+        html:not(.dark) .bg-dark-400 { background: #ffffff; }
+        html:not(.dark) .border-gray-800 { border-color: #e5e7eb; }
+        html:not(.dark) .text-gray-200, html:not(.dark) .text-gray-300, html:not(.dark) .text-gray-400 { color: #4b5563; }
+        html:not(.dark) .hover\:bg-dark-200:hover { background: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-dark-300 text-gray-200 font-sans min-h-screen"
+      x-data="depositPage()" x-init="init()" x-cloak>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/60 z-40 md:hidden" x-transition.opacity style="display:none"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="fixed top-0 left-0 h-full w-72 bg-dark-400 border-r border-gray-800 z-50 flex flex-col transition-transform duration-300"
+           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+
+        <!-- Logo -->
+        <div class="h-16 flex items-center justify-between px-5 border-b border-gray-800">
+            <a href="index.html" class="flex items-center gap-2">
+                <span class="text-xl font-extrabold tracking-tight text-white">Hold<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">RiseX</span></span>
+            </a>
+            <button @click="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-5 border-b border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white truncate" x-text="user?.name || 'User'"></p>
+                    <p class="text-xs text-gray-400 truncate" x-text="user?.email || ''"></p>
+                </div>
+            </div>
+            <div class="mt-3 bg-dark-300 rounded-lg p-3">
+                <p class="text-xs text-gray-400">Available Balance</p>
+                <p class="text-lg font-bold text-white" x-text="formatCurrency(balance)"></p>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <!-- Overview -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mb-2">Overview</p>
+            <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+            </a>
+            <a href="statement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Account Statement
+            </a>
+
+            <!-- Trading -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Trading & Markets</p>
+            <a href="trade.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="activity" class="w-4 h-4"></i> Live Markets
+                <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium">Live</span>
+            </a>
+            <a href="copy.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="copy" class="w-4 h-4"></i> Copy Trading
+                <span class="ml-auto text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-medium">Pro</span>
+            </a>
+
+            <!-- Investments -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Portfolio</p>
+            <a href="plans.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="briefcase" class="w-4 h-4"></i> Investment Plans
+            </a>
+            <a href="portfolio.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i> My Portfolio
+            </a>
+
+            <!-- Wallet -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Wallet & Funds</p>
+            <a href="deposit.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400">
+                <i data-lucide="arrow-down-circle" class="w-4 h-4"></i> Deposit Funds
+            </a>
+            <a href="withdraw.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Withdraw Funds
+            </a>
+
+            <!-- Account -->
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Account</p>
+            <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="settings" class="w-4 h-4"></i> Profile Settings
+            </a>
+            <a href="kyc.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification
+            </a>
+            <a href="referrals.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="users" class="w-4 h-4"></i> Referral Program
+                <span class="ml-auto text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">5%</span>
+            </a>
+            <a href="support.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="headphones" class="w-4 h-4"></i> Support
+            </a>
+
+            <!-- Sign Out -->
+            <div class="pt-4 mt-4 border-t border-gray-800">
+                <button @click="userLogout()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition w-full">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="md:ml-64 min-h-screen flex flex-col">
+
+        <!-- TOP NAVBAR -->
+        <nav class="sticky top-0 z-40 bg-dark-400/95 backdrop-blur-xl border-b border-gray-800">
+            <div class="flex items-center justify-between h-16 px-4 lg:px-6">
+                <!-- Mobile hamburger -->
+                <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 text-gray-400 hover:text-white">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Desktop spacer -->
+                <div class="hidden md:block"></div>
+
+                <!-- Center: Balance -->
+                <div class="flex items-center gap-4">
+                    <div class="bg-dark-300 rounded-xl px-5 py-2 flex items-center gap-3 border border-gray-800">
+                        <div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-4 h-4 text-green-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase">Balance</p>
+                            <p class="text-sm font-bold text-white" x-text="formatCurrency(balance)"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Actions -->
+                <div class="flex items-center gap-3">
+                    <!-- Quick Actions -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition hidden sm:block">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <a href="deposit.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-down-circle" class="w-4 h-4 text-green-400"></i> Deposit</a>
+                            <a href="withdraw.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-up-circle" class="w-4 h-4 text-red-400"></i> Withdraw</a>
+                            <a href="trade.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="activity" class="w-4 h-4 text-blue-400"></i> Trade</a>
+                        </div>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button @click="toggleTheme()" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition">
+                        <i :data-lucide="darkMode ? 'sun' : 'moon'" class="w-5 h-5"></i>
+                    </button>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-dark-300 transition">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                            <span class="text-sm text-gray-300 hidden sm:block" x-text="user?.name?.split(' ')[0] || 'User'"></span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <div class="px-4 py-2 border-b border-gray-800">
+                                <p class="text-sm font-semibold text-white" x-text="user?.name || 'User'"></p>
+                                <p class="text-xs text-gray-400" x-text="user?.email || ''"></p>
+                            </div>
+                            <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="settings" class="w-4 h-4"></i> Profile Settings</a>
+                            <a href="kyc.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification</a>
+                            <div class="border-t border-gray-800 mt-1 pt-1">
+                                <button @click="userLogout()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 p-4 lg:p-6">
+
+            <!-- Loading State -->
+            <div x-show="loading" class="flex items-center justify-center py-20">
+                <div class="text-center">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="mt-3 text-gray-400 text-sm">Loading deposit page...</p>
+                </div>
+            </div>
+
+            <div x-show="!loading">
+                <!-- Page Header -->
+                <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Deposit Funds</h1>
+                        <p class="text-sm text-gray-400 mt-1">Add funds to your trading account</p>
+                    </div>
+                </div>
+
+                <!-- Stats Cards Row -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Total Deposited -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center"><i data-lucide="arrow-down-left" class="w-5 h-5 text-green-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Total Deposited</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="formatCurrency(stats.total)"></p>
+                    </div>
+                    <!-- Pending -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center"><i data-lucide="clock" class="w-5 h-5 text-yellow-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Pending</span>
+                        </div>
+                        <p class="text-xl font-bold text-yellow-400" x-text="formatCurrency(stats.pending)"></p>
+                        <p class="text-[11px] text-gray-500 mt-1" x-text="stats.count_pending + ' pending'"></p>
+                    </div>
+                    <!-- Completed -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><i data-lucide="check-circle" class="w-5 h-5 text-blue-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Completed</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="formatCurrency(stats.total - stats.pending - stats.failed)"></p>
+                        <p class="text-[11px] text-gray-500 mt-1" x-text="stats.count_completed + ' completed'"></p>
+                    </div>
+                    <!-- Failed -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><i data-lucide="x-circle" class="w-5 h-5 text-red-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Failed</span>
+                        </div>
+                        <p class="text-xl font-bold text-red-400" x-text="formatCurrency(stats.failed)"></p>
+                    </div>
+                </div>
+
+                <!-- Deposit Form + Wallet Info -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+                    <!-- Deposit Form (2 cols) -->
+                    <div class="lg:col-span-2 bg-dark-400 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-base font-semibold text-white mb-6">Make a Deposit</h3>
+
+                        <form @submit.prevent="submitDeposit()">
+                            <!-- Amount -->
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Amount (USD)</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">$</span>
+                                    <input type="number" x-model="form.amount" min="10" step="0.01" required
+                                           placeholder="0.00"
+                                           class="w-full bg-dark-300 border border-gray-800 rounded-lg pl-8 pr-4 py-3 text-white font-semibold text-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder:text-gray-600">
+                                </div>
+                                <p class="text-[11px] text-gray-500 mt-1.5">Minimum deposit: $10.00</p>
+                            </div>
+
+                            <!-- Method Selection -->
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-gray-300 mb-3">Payment Method</label>
+                                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                    <!-- Bitcoin -->
+                                    <button type="button" @click="form.method = 'bitcoin'" class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition" :class="form.method === 'bitcoin' ? 'border-orange-500 bg-orange-500/10' : 'border-gray-800 bg-dark-300 hover:border-gray-600'">
+                                        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#F7931A"/><path d="M22.8 14.2c.4-2.7-1.7-4.1-4.5-5l.9-3.7-2.2-.6-.9 3.6c-.6-.1-1.2-.3-1.8-.4l.9-3.7-2.2-.6-.9 3.7c-.5-.1-1-.3-1.5-.4l-3-.8-.6 2.3s1.6.4 1.6.4c.9.2 1.1.8 1 1.3l-1 4c.1 0 .1.1.2.1h-.2l-1.4 5.6c-.1.3-.4.7-1 .5 0 0-1.6-.4-1.6-.4l-1.1 2.5 2.8.7c.5.1 1.1.3 1.6.4l-.9 3.7 2.2.6.9-3.7c.6.2 1.3.3 1.9.5l-.9 3.7 2.2.6.9-3.7c3.8.7 6.6.4 7.8-3 1-2.7 0-4.3-.8-5.2 1.8-.5 3.1-1.5 3.4-3.6zm-4.8 6.7c-.7 2.8-5.4 1.3-6.9 1l1.5-6c1.5.4 6.6.1 5.4 5zm.7-6.8c-.6 2.5-4.6 1.2-5.8.9l1.4-5.5c1.2.3 5.6.1 4.4 4.6z" fill="#fff"/></svg>
+                                        <span class="text-xs font-medium" :class="form.method === 'bitcoin' ? 'text-orange-400' : 'text-gray-400'">Bitcoin</span>
+                                    </button>
+                                    <!-- Ethereum -->
+                                    <button type="button" @click="form.method = 'ethereum'" class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition" :class="form.method === 'ethereum' ? 'border-blue-500 bg-blue-500/10' : 'border-gray-800 bg-dark-300 hover:border-gray-600'">
+                                        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#627EEA"/><path d="M16 5v8.5l7.2 3.2-7.2 12.8-7.2-12.8 7.2-3.2V5z" fill="#fff" opacity=".6"/><path d="M16 5l7.2 11.7-7.2 3.2V5z" fill="#fff"/><path d="M8.8 16.7L16 29.5l7.2-12.8-7.2 3.2-7.2-3.2z" fill="#fff" opacity=".6"/></svg>
+                                        <span class="text-xs font-medium" :class="form.method === 'ethereum' ? 'text-blue-400' : 'text-gray-400'">Ethereum</span>
+                                    </button>
+                                    <!-- USDT -->
+                                    <button type="button" @click="form.method = 'usdt'" class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition" :class="form.method === 'usdt' ? 'border-green-500 bg-green-500/10' : 'border-gray-800 bg-dark-300 hover:border-gray-600'">
+                                        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#26A17B"/><path d="M17.2 12.7h-2.4v-1.5h2.4v-1.8h-4.2v1.8h-2.4v1.5h2.4v7h2.4v-7z" fill="#fff"/><path d="M21.5 17.2c0 1.1-1.9 1.8-4.3 2.2-2.4.4-4.5.4-4.5-.8 0-2.4 5.8-2 5.8-4.3 0-1.1-1.6-1.6-3.3-1.7v-1.6h-2.4v1.6c-1.4.1-3 .8-3 2.1 0 2.7 5.8 1.8 5.8 4.4 0 1.2-2 1.8-4.2 2.2v1.7h2.4v-1.6c2.6-.2 4.5-1 4.5-2.3 0-2.3-5.8-2.1-5.8-4.4 0-1 1.5-1.5 3-1.7v-1.6h2.4v1.6c1.7.1 3 .7 3 1.8z" fill="#fff"/></svg>
+                                        <span class="text-xs font-medium" :class="form.method === 'usdt' ? 'text-green-400' : 'text-gray-400'">USDT</span>
+                                    </button>
+                                    <!-- Bank Transfer -->
+                                    <button type="button" @click="form.method = 'bank_transfer'" class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition" :class="form.method === 'bank_transfer' ? 'border-purple-500 bg-purple-500/10' : 'border-gray-800 bg-dark-300 hover:border-gray-600'">
+                                        <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                            <i data-lucide="landmark" class="w-4 h-4 text-purple-400"></i>
+                                        </div>
+                                        <span class="text-xs font-medium" :class="form.method === 'bank_transfer' ? 'text-purple-400' : 'text-gray-400'">Bank</span>
+                                    </button>
+                                    <!-- Card -->
+                                    <button type="button" @click="form.method = 'card'" class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition" :class="form.method === 'card' ? 'border-cyan-500 bg-cyan-500/10' : 'border-gray-800 bg-dark-300 hover:border-gray-600'">
+                                        <div class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                                            <i data-lucide="credit-card" class="w-4 h-4 text-cyan-400"></i>
+                                        </div>
+                                        <span class="text-xs font-medium" :class="form.method === 'card' ? 'text-cyan-400' : 'text-gray-400'">Card</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Crypto Fields -->
+                            <div x-show="isCrypto" x-transition class="space-y-4 mb-5">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Wallet Address (from which you sent)</label>
+                                    <input type="text" x-model="form.wallet_address" placeholder="Enter your sending wallet address"
+                                           class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder:text-gray-600">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Transaction Hash (TXID)</label>
+                                    <input type="text" x-model="form.transaction_hash" placeholder="Enter transaction hash"
+                                           class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder:text-gray-600">
+                                </div>
+                            </div>
+
+                            <!-- Bank / Card Fields Info -->
+                            <div x-show="!isCrypto && form.method" x-transition class="mb-5">
+                                <div class="bg-dark-300 border border-gray-800 rounded-xl p-5">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <i data-lucide="info" class="w-5 h-5 text-blue-400"></i>
+                                        <span class="text-sm font-medium text-white" x-text="form.method === 'bank_transfer' ? 'Bank Transfer Details' : 'Card Payment'"></span>
+                                    </div>
+                                    <p class="text-xs text-gray-400" x-show="form.method === 'bank_transfer'">After making the bank transfer, please enter the exact amount you transferred. Our team will verify and credit your account within 1-2 business days.</p>
+                                    <p class="text-xs text-gray-400" x-show="form.method === 'card'">You will be redirected to our secure payment gateway to complete your card payment after submitting.</p>
+                                </div>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="submit" :disabled="submitting || !form.method || form.amount < 10"
+                                    class="w-full py-3.5 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2"
+                                    :class="submitting || !form.method || form.amount < 10 ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/20'">
+                                <svg x-show="submitting" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <i x-show="!submitting" data-lucide="arrow-down-circle" class="w-4 h-4"></i>
+                                <span x-text="submitting ? 'Processing...' : 'Submit Deposit'"></span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Wallet Address Info (1 col) -->
+                    <div x-show="isCrypto" x-transition class="space-y-4">
+                        <div class="bg-gradient-to-br from-orange-600/10 to-yellow-600/10 border border-orange-500/20 rounded-xl p-6">
+                            <h3 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                                <i data-lucide="wallet" class="w-5 h-5 text-orange-400"></i>
+                                <span x-text="methodLabel + ' Deposit Address'"></span>
+                            </h3>
+                            <p class="text-xs text-gray-400 mb-4">Send only <span x-text="methodLabel"></span> to this address. Sending any other asset may result in permanent loss.</p>
+                            <div class="bg-dark-400 rounded-lg p-4 border border-gray-800">
+                                <p class="text-[10px] text-gray-500 uppercase mb-2">Your deposit address</p>
+                                <div class="flex items-center gap-2">
+                                    <code class="text-xs text-white font-mono break-all flex-1 select-all" x-text="depositAddress"></code>
+                                    <button @click="copyAddress()" class="shrink-0 p-2 bg-dark-300 rounded-lg hover:bg-dark-200 transition">
+                                        <i data-lucide="copy" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                            <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-400"></i> Important Notes
+                            </h4>
+                            <ul class="space-y-2.5">
+                                <li class="flex items-start gap-2 text-xs text-gray-400">
+                                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0"></i>
+                                    Minimum deposit: $10.00
+                                </li>
+                                <li class="flex items-start gap-2 text-xs text-gray-400">
+                                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0"></i>
+                                    Deposits are confirmed after network confirmations
+                                </li>
+                                <li class="flex items-start gap-2 text-xs text-gray-400">
+                                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0"></i>
+                                    Always include your transaction hash for faster processing
+                                </li>
+                                <li class="flex items-start gap-2 text-xs text-gray-400">
+                                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0"></i>
+                                    Only send from a wallet you control
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Non-crypto quick info -->
+                    <div x-show="!isCrypto && !form.method" class="bg-gradient-to-br from-blue-600/10 to-indigo-600/10 border border-blue-500/20 rounded-xl p-6">
+                        <h3 class="text-base font-semibold text-white mb-3">How to Deposit</h3>
+                        <div class="space-y-4 mt-4">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0"><span class="text-xs font-bold text-blue-400">1</span></div>
+                                <div><p class="text-sm font-medium text-white">Choose a method</p><p class="text-xs text-gray-400">Select your preferred payment method above</p></div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0"><span class="text-xs font-bold text-blue-400">2</span></div>
+                                <div><p class="text-sm font-medium text-white">Enter amount</p><p class="text-xs text-gray-400">Minimum deposit is $10.00</p></div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0"><span class="text-xs font-bold text-blue-400">3</span></div>
+                                <div><p class="text-sm font-medium text-white">Complete payment</p><p class="text-xs text-gray-400">Follow the instructions for your chosen method</p></div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0"><span class="text-xs font-bold text-green-400">4</span></div>
+                                <div><p class="text-sm font-medium text-white">Funds credited</p><p class="text-xs text-gray-400">Crypto is instant, bank transfers take 1-2 business days</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Deposits Table -->
+                <div class="bg-dark-400 border border-gray-800 rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-semibold text-white">Recent Deposits</h3>
+                        <span class="text-xs text-gray-400" x-text="'Total: ' + deposits.length + ' deposits'"></span>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div x-show="!loadingDeposits && deposits.length === 0" class="text-center py-12">
+                        <i data-lucide="arrow-down-circle" class="w-12 h-12 text-gray-700 mx-auto mb-3"></i>
+                        <p class="text-sm text-gray-500">No deposits found</p>
+                        <p class="text-xs text-gray-600 mt-1">Your deposit history will appear here</p>
+                    </div>
+
+                    <!-- Loading state -->
+                    <div x-show="loadingDeposits" class="flex items-center justify-center py-12">
+                        <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </div>
+
+                    <!-- Desktop Table -->
+                    <div x-show="!loadingDeposits && deposits.length > 0" class="overflow-x-auto hidden md:block">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-gray-400 text-xs uppercase border-b border-gray-800">
+                                    <th class="pb-3 pr-4">Amount</th>
+                                    <th class="pb-3 pr-4">Method</th>
+                                    <th class="pb-3 pr-4">Status</th>
+                                    <th class="pb-3 pr-4">Transaction Hash</th>
+                                    <th class="pb-3">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="dep in deposits" :key="dep.id">
+                                    <tr class="border-b border-gray-800/50 hover:bg-dark-300 transition">
+                                        <td class="py-3.5 pr-4 font-semibold text-white" x-text="formatCurrency(dep.amount)"></td>
+                                        <td class="py-3.5 pr-4">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 rounded-full flex items-center justify-center" :class="methodIconBg(dep.method)">
+                                                    <i :data-lucide="methodIcon(dep.method)" class="w-3 h-3" :class="methodIconColor(dep.method)"></i>
+                                                </div>
+                                                <span class="text-gray-300 text-xs" x-text="formatMethod(dep.method)"></span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 pr-4">
+                                            <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+                                                  :class="{
+                                                      'bg-green-500/10 text-green-400': dep.status === 'completed',
+                                                      'bg-yellow-500/10 text-yellow-400': dep.status === 'pending',
+                                                      'bg-red-500/10 text-red-400': dep.status === 'failed'
+                                                  }"
+                                                  x-text="dep.status"></span>
+                                        </td>
+                                        <td class="py-3.5 pr-4">
+                                            <span x-show="dep.transaction_hash" class="text-xs text-gray-400 font-mono" x-text="dep.transaction_hash ? (dep.transaction_hash.substring(0, 10) + '...' + dep.transaction_hash.substring(dep.transaction_hash.length - 6)) : '-'"></span>
+                                            <span x-show="!dep.transaction_hash" class="text-xs text-gray-600">-</span>
+                                        </td>
+                                        <td class="py-3.5 text-gray-400 text-xs" x-text="formatDate(dep.created_at)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards -->
+                    <div x-show="!loadingDeposits && deposits.length > 0" class="md:hidden space-y-3">
+                        <template x-for="dep in deposits" :key="dep.id + '-mobile'">
+                            <div class="bg-dark-300 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="methodIconBg(dep.method)">
+                                            <i :data-lucide="methodIcon(dep.method)" class="w-4 h-4" :class="methodIconColor(dep.method)"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold text-white" x-text="formatCurrency(dep.amount)"></p>
+                                            <p class="text-xs text-gray-400" x-text="formatMethod(dep.method)"></p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+                                          :class="{
+                                              'bg-green-500/10 text-green-400': dep.status === 'completed',
+                                              'bg-yellow-500/10 text-yellow-400': dep.status === 'pending',
+                                              'bg-red-500/10 text-red-400': dep.status === 'failed'
+                                          }"
+                                          x-text="dep.status"></span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-gray-500 font-mono" x-show="dep.transaction_hash" x-text="dep.transaction_hash ? dep.transaction_hash.substring(0, 16) + '...' : '-'"></span>
+                                    <span class="text-gray-500" x-text="formatDate(dep.created_at)"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function depositPage() {
+            return {
+                user: null,
+                balance: 0,
+                loading: true,
+                sidebarOpen: false,
+                submitting: false,
+                loadingDeposits: true,
+
+                deposits: [],
+                stats: { total: 0, pending: 0, failed: 0, count_total: 0, count_pending: 0, count_completed: 0 },
+
+                form: {
+                    amount: '',
+                    method: '',
+                    wallet_address: '',
+                    transaction_hash: ''
+                },
+
+                depositAddresses: {
+                    bitcoin: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+                    ethereum: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+                    usdt: 'TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9'
+                },
+
+                get isCrypto() {
+                    return ['bitcoin', 'ethereum', 'usdt'].includes(this.form.method);
+                },
+
+                get depositAddress() {
+                    return this.depositAddresses[this.form.method] || '';
+                },
+
+                get methodLabel() {
+                    const labels = { bitcoin: 'Bitcoin (BTC)', ethereum: 'Ethereum (ETH)', usdt: 'Tether (USDT)' };
+                    return labels[this.form.method] || '';
+                },
+
+                async init() {
+                    if (!requireUserAuth()) return;
+                    this.user = getUserData();
+                    await Promise.all([this.loadStats(), this.loadDeposits(), this.loadDepositAddresses()]);
+                    this.loading = false;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                async loadDepositAddresses() {
+                    const apiBase = window.location.protocol === 'file:'
+                        ? 'http://127.0.0.1:8000/api'
+                        : `${window.location.origin}/api`;
+                    const addresses = await fetch(`${apiBase}/deposit-settings`, { headers: { Accept: 'application/json' } }).then(response => response.json());
+                    if (addresses) this.depositAddresses = { ...this.depositAddresses, ...addresses };
+                },
+
+                async loadStats() {
+                    try {
+                        const s = await userApiGet('/user/deposits-stats');
+                        if (s) this.stats = s;
+                    } catch(e) { console.error(e); }
+                },
+
+                async loadDeposits() {
+                    this.loadingDeposits = true;
+                    try {
+                        const d = await userApiGet('/user/deposits');
+                        if (d) {
+                            this.deposits = Array.isArray(d) ? d : (d.data || d.deposits || []);
+                            this.balance = d.balance ?? this.balance;
+                        }
+                    } catch(e) { console.error(e); }
+                    this.loadingDeposits = false;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                async submitDeposit() {
+                    if (!this.form.method || this.form.amount < 10) return;
+                    this.submitting = true;
+
+                    const payload = {
+                        amount: parseFloat(this.form.amount),
+                        method: this.form.method
+                    };
+                    if (this.isCrypto) {
+                        if (this.form.wallet_address) payload.wallet_address = this.form.wallet_address;
+                        if (this.form.transaction_hash) payload.transaction_hash = this.form.transaction_hash;
+                    }
+
+                    try {
+                        const res = await userApiPost('/user/deposits', payload);
+                        if (res && !res.error) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deposit Submitted!',
+                                text: 'Your deposit has been submitted for review. You will be notified once it is confirmed.',
+                                confirmButtonColor: '#6366f1',
+                                background: '#0F172A',
+                                color: '#e5e7eb'
+                            });
+                            this.form = { amount: '', method: '', wallet_address: '', transaction_hash: '' };
+                            await Promise.all([this.loadStats(), this.loadDeposits()]);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Deposit Failed',
+                                text: res?.message || res?.error || 'Something went wrong. Please try again.',
+                                confirmButtonColor: '#6366f1',
+                                background: '#0F172A',
+                                color: '#e5e7eb'
+                            });
+                        }
+                    } catch(e) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An unexpected error occurred. Please try again.',
+                            confirmButtonColor: '#6366f1',
+                            background: '#0F172A',
+                            color: '#e5e7eb'
+                        });
+                    }
+                    this.submitting = false;
+                },
+
+                copyAddress() {
+                    navigator.clipboard.writeText(this.depositAddress).then(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Copied!',
+                            text: 'Deposit address copied to clipboard.',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            background: '#0F172A',
+                            color: '#e5e7eb'
+                        });
+                    });
+                },
+
+                formatMethod(method) {
+                    const map = {
+                        bitcoin: 'Bitcoin',
+                        ethereum: 'Ethereum',
+                        usdt: 'USDT',
+                        bank_transfer: 'Bank Transfer',
+                        card: 'Card'
+                    };
+                    return map[method] || method;
+                },
+
+                methodIcon(method) {
+                    const map = {
+                        bitcoin: 'bitcoin',
+                        ethereum: 'hexagon',
+                        usdt: 'dollar-sign',
+                        bank_transfer: 'landmark',
+                        card: 'credit-card'
+                    };
+                    return map[method] || 'circle';
+                },
+
+                methodIconBg(method) {
+                    const map = {
+                        bitcoin: 'bg-orange-500/10',
+                        ethereum: 'bg-blue-500/10',
+                        usdt: 'bg-green-500/10',
+                        bank_transfer: 'bg-purple-500/10',
+                        card: 'bg-cyan-500/10'
+                    };
+                    return map[method] || 'bg-gray-500/10';
+                },
+
+                methodIconColor(method) {
+                    const map = {
+                        bitcoin: 'text-orange-400',
+                        ethereum: 'text-blue-400',
+                        usdt: 'text-green-400',
+                        bank_transfer: 'text-purple-400',
+                        card: 'text-cyan-400'
+                    };
+                    return map[method] || 'text-gray-400';
+                },
+
+                toggleTheme() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+                    this.$nextTick(() => lucide.createIcons());
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+        document.addEventListener('alpine:updated', () => lucide.createIcons());
+    </script>
+</body>
+</html>

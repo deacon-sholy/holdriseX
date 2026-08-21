@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             AuditLogSeeder::class,
             SettingSeeder::class,
             UserInvestmentSeeder::class,
+            SignalSeeder::class,
         ]);
     }
 }

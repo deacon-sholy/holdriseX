@@ -29,6 +29,13 @@ class AnnouncementController extends Controller
         return response()->json($announcements);
     }
 
+    public function show($id): JsonResponse
+    {
+        $announcement = Announcement::findOrFail($id);
+
+        return response()->json($announcement);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -44,10 +51,6 @@ class AnnouncementController extends Controller
         $validated['target_audience'] = $validated['target_audience'] ?? 'all';
         $validated['status'] = $validated['status'] ?? 'draft';
         $validated['admin_id'] = $request->user()->id;
-
-        if (($validated['status'] ?? 'draft') === 'published') {
-            $validated['published_at'] = now();
-        }
 
         $announcement = Announcement::create($validated);
 

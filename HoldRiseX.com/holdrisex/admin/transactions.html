@@ -55,6 +55,10 @@
     allTransactions: [],
     stats: { total: 0, volume: 0, pending: 0, failed: 0 },
     loading: true,
+    refundModal: false,
+    refundTx: null,
+    refundReason: '',
+    refundProcessing: false,
     async init() {
         if (!requireAuth()) return;
         await Promise.all([this.fetchTransactions(), this.fetchStats()]);
@@ -82,7 +86,8 @@
                 fee: 0,
                 status: d.status,
                 date: formatDate(d.created_at),
-                wallet: d.transaction_id || '-'
+                wallet: d.transaction_hash || '-',
+                method: d.method || ''
             })));
         }
         if (witRes && witRes.data) {
@@ -141,7 +146,50 @@
     get filteredTransactions() {
         return this.transactions.slice((this.currentPage - 1) * this.perPage, this.currentPage * this.perPage);
     },
-    get totalPages() { return Math.ceil(this.transactions.length / this.perPage) || 1; }
+    get totalPages() { return Math.ceil(this.transactions.length / this.perPage) || 1; },
+    openExplorer(tx) {
+        const wallet = tx.wallet;
+        const method = (tx.method || '').toLowerCase();
+        if (!wallet || wallet === '-') return;
+        let url = '';
+        if (method.includes('bitcoin') || method.includes('btc')) {
+            url = 'https://www.blockchain.com/btc/tx/' + wallet;
+        } else if (method.includes('ethereum') || method.includes('eth')) {
+            url = 'https://etherscan.io/tx/' + wallet;
+        } else if (method.includes('usdt')) {
+            url = 'https://etherscan.io/tx/' + wallet;
+        } else {
+            url = 'https://etherscan.io/tx/' + wallet;
+        }
+        window.open(url, '_blank');
+    },
+    openRefund(tx) {
+        this.refundTx = tx;
+        this.refundReason = '';
+        this.refundModal = true;
+    },
+    async processRefund() {
+        if (!this.refundTx || this.refundProcessing) return;
+        this.refundProcessing = true;
+        try {
+            const res = await apiPost('/admin/deposits/' + this.refundTx._id + '/refund', {
+                reason: this.refundReason || 'Refunded by admin'
+            });
+            if (res && res.message) {
+                this.refundModal = false;
+                this.refundTx = null;
+                await this.fetchTransactions();
+                lucide.createIcons();
+                alert('Refund processed successfully');
+            } else {
+                alert('Refund failed: ' + (res?.message || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Refund failed: ' + (e.message || 'Network error'));
+        } finally {
+            this.refundProcessing = false;
+        }
+    }
 }" x-init="init()">
 
 <!-- Mobile sidebar overlay -->
@@ -204,7 +252,7 @@
         <a href="kyc.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400">
             <i data-lucide="file-check" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">KYC Verification</span>
-            <span class="ml-auto bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full font-medium" x-show="sidebarOpen">3</span>
+            <span x-data="{ count: 0 }" x-init="apiGet('/admin/kyc-stats').then(r => { if (r) count = r.pending || 0; })" x-show="count > 0 && sidebarOpen" x-text="count" class="ml-auto bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full font-medium"></span>
         </a>
 
         <p class="px-3 mb-3 mt-6 text-xs font-semibold text-gray-500 uppercase tracking-wider" x-show="sidebarOpen">System</p>
@@ -223,7 +271,7 @@
     </nav>
 
     <div class="p-3 border-t border-gray-800">
-        <a href="login.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
+        <a href="login.html" onclick="adminLogout(); return false;" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
             <i data-lucide="log-out" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">Logout</span>
         </a>
@@ -260,35 +308,27 @@
                     <span class="text-green-400 font-semibold" x-text="btcPrice ? '$' + btcPrice.toLocaleString() : '$---'"></span>
                 </div>
 
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" class="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors">
+                <!-- Notifications -->
+                <div x-data="{ open: false, notifications: [], notifCount: 0 }" class="relative">
+                    <button @click="open = !open; if (open && !notifications.length) apiGet('/admin/notifications?limit=10').then(r => { if (r) { notifications = r.notifications || []; notifCount = r.unread_count || 0; } })" class="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors">
                         <i data-lucide="bell" class="w-5 h-5"></i>
-                        <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-gray-900"></span>
+                        <span x-show="notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full border-2 border-gray-900 text-[10px] font-bold text-white flex items-center justify-center"></span>
                     </button>
                     <div x-show="open" @click.away="open = false" x-cloak
                          x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                          class="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
                         <div class="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
                             <h3 class="text-sm font-semibold text-white">Notifications</h3>
-                            <span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">5 new</span>
+                            <span x-show="notifCount > 0" x-text="notifCount + ' new'" class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"></span>
                         </div>
                         <div class="max-h-64 overflow-y-auto">
-                            <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="wallet" class="w-4 h-4 text-green-400"></i></div>
-                                <div><p class="text-sm text-gray-200">New deposit of $5,000 from John D.</p><p class="text-xs text-gray-500 mt-1">2 minutes ago</p></div>
-                            </div>
-                            <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="user-plus" class="w-4 h-4 text-yellow-400"></i></div>
-                                <div><p class="text-sm text-gray-200">New user registration: Sarah M.</p><p class="text-xs text-gray-500 mt-1">15 minutes ago</p></div>
-                            </div>
-                            <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="alert-circle" class="w-4 h-4 text-red-400"></i></div>
-                                <div><p class="text-sm text-gray-200">KYC verification pending: Michael B.</p><p class="text-xs text-gray-500 mt-1">1 hour ago</p></div>
-                            </div>
-                            <div class="px-4 py-3 hover:bg-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="banknote" class="w-4 h-4 text-blue-400"></i></div>
-                                <div><p class="text-sm text-gray-200">Withdrawal request: $2,500 by Emma W.</p><p class="text-xs text-gray-500 mt-1">3 hours ago</p></div>
-                            </div>
+                            <template x-if="notifications.length === 0"><p class="px-4 py-6 text-center text-sm text-gray-500">No notifications yet</p></template>
+                            <template x-for="n in notifications" :key="n.id">
+                                <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
+                                    <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" :class="{'bg-green-400': n.color==='green','bg-yellow-400': n.color==='yellow','bg-red-400': n.color==='red','bg-blue-400': n.color==='blue','bg-orange-400': n.color==='orange','bg-purple-400': n.color==='purple'}"></div>
+                                    <div><p class="text-sm text-gray-200" x-text="n.message"></p><p class="text-xs text-gray-500 mt-1" x-text="timeAgo(n.time)"></p></div>
+                                </div>
+                            </template>
                         </div>
                         <div class="px-4 py-2 border-t border-gray-700 text-center">
                             <button class="text-xs text-primary-400 hover:text-primary-300 font-medium">View all notifications</button>
@@ -312,7 +352,7 @@
                             <a href="profile.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50"><i data-lucide="user" class="w-4 h-4"></i> Profile</a>
                             <a href="settings.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50"><i data-lucide="settings" class="w-4 h-4"></i> Settings</a>
                             <hr class="border-gray-700">
-                            <a href="login.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-gray-700/50"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
+                            <a href="login.html" onclick="adminLogout(); return false;" class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-gray-700/50"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
                         </div>
                     </div>
                 </div>
@@ -335,7 +375,7 @@
                         <i data-lucide="filter" class="w-4 h-4"></i>
                         Filters
                     </button>
-                    <button class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                    <button @click="exportCSV(['ID', 'Type', 'User', 'Email', 'Asset', 'Amount', 'Fee', 'Status', 'Date', 'Wallet'], transactions.map(tx => [tx.id, tx.type, tx.user, tx.email, tx.asset, tx.amount, tx.fee, tx.status, tx.date, tx.wallet]), 'transactions.csv')" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                         <i data-lucide="download" class="w-4 h-4"></i>
                         Export CSV
                     </button>
@@ -494,7 +534,7 @@
                                         <button @click="selectedTx = tx; showDetail = true" class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="View Details">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </button>
-                                        <button x-show="tx.status === 'pending' || tx.status === 'failed'" class="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors" title="Refund">
+                                        <button x-show="tx.status === 'completed'" @click="openRefund(tx)" class="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors" title="Refund">
                                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                                         </button>
                                     </div>
@@ -697,14 +737,14 @@
                         </template>
 
                         <!-- Transaction Hash -->
-                        <template x-if="selectedTx.txHash">
+                        <template x-if="selectedTx.wallet && selectedTx.wallet !== '-'">
                             <div class="space-y-4">
                                 <h3 class="text-sm font-semibold text-white">On-Chain Data</h3>
                                 <div class="bg-gray-800/30 rounded-xl divide-y divide-gray-700/50 border border-gray-700/50">
                                     <div class="px-4 py-3">
                                         <span class="text-sm text-gray-400 block mb-1">Tx Hash</span>
                                         <div class="flex items-center gap-2">
-                                            <span class="text-xs text-primary-400 font-mono break-all" x-text="selectedTx.txHash"></span>
+                                            <span class="text-xs text-primary-400 font-mono break-all" x-text="selectedTx.wallet"></span>
                                             <button class="text-gray-500 hover:text-white flex-shrink-0" title="Copy">
                                                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                             </button>
@@ -735,12 +775,12 @@
 
                         <!-- Actions -->
                         <div class="flex gap-3 pt-2">
-                            <button class="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors">
+                            <button @click="openExplorer(selectedTx)" class="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors">
                                 <i data-lucide="external-link" class="w-4 h-4"></i>
                                 View on Explorer
                             </button>
-                            <template x-if="selectedTx.status === 'pending' || selectedTx.status === 'failed'">
-                                <button class="flex-1 flex items-center justify-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors">
+                            <template x-if="selectedTx.type === 'deposit' && selectedTx.status === 'completed'">
+                                <button @click="openRefund(selectedTx)" class="flex-1 flex items-center justify-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors">
                                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                                     Process Refund
                                 </button>
@@ -750,6 +790,55 @@
                 </div>
             </div>
         </template>
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div x-show="refundModal" x-cloak class="relative z-50" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="refundModal = false"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-md" @click.away="refundModal = false"
+             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+            <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white">Process Refund</h3>
+                <button @click="refundModal = false" class="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <template x-if="refundTx">
+                    <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Transaction</span>
+                            <span class="text-white font-medium" x-text="refundTx.id"></span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">User</span>
+                            <span class="text-white" x-text="refundTx.user"></span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Amount</span>
+                            <span class="text-white font-semibold" x-text="'$' + refundTx.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                        </div>
+                    </div>
+                </template>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Reason (optional)</label>
+                    <textarea x-model="refundReason" rows="3" placeholder="Enter refund reason..."
+                              class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none placeholder-gray-500 resize-none"></textarea>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-800 flex items-center justify-end gap-3">
+                <button @click="refundModal = false" class="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">Cancel</button>
+                <button @click="processRefund()" :disabled="refundProcessing" class="px-5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                        :class="refundProcessing ? 'bg-yellow-600/50 text-white/50 cursor-not-allowed' : 'bg-yellow-600 hover:bg-yellow-700 text-white'">
+                    <template x-if="refundProcessing">
+                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    </template>
+                    <span x-text="refundProcessing ? 'Processing...' : 'Confirm Refund'"></span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 

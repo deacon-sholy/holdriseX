@@ -105,7 +105,7 @@
         <a href="kyc.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400">
             <i data-lucide="file-check" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">KYC Verification</span>
-            <span class="ml-auto bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full font-medium" x-show="sidebarOpen">3</span>
+            <span x-data="{ count: 0 }" x-init="apiGet('/admin/kyc-stats').then(r => { if (r) count = r.pending || 0; })" x-show="count > 0 && sidebarOpen" x-text="count" class="ml-auto bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full font-medium"></span>
         </a>
 
         <p class="px-3 mb-3 mt-6 text-xs font-semibold text-gray-500 uppercase tracking-wider" x-show="sidebarOpen">System</p>
@@ -124,7 +124,7 @@
     </nav>
 
     <div class="p-3 border-t border-gray-800">
-        <a href="login.html" @click="clearAuthToken()" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
+        <a href="login.html" onclick="adminLogout(); return false;" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400">
             <i data-lucide="log-out" class="w-5 h-5 flex-shrink-0"></i>
             <span x-show="sidebarOpen">Logout</span>
         </a>
@@ -161,35 +161,27 @@
                     <span class="text-green-400 font-semibold" x-text="btcPrice ? '$' + btcPrice.toLocaleString() : '$---'"></span>
                 </div>
 
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" class="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors">
+                <!-- Notifications -->
+                <div x-data="{ open: false, notifications: [], notifCount: 0 }" class="relative">
+                    <button @click="open = !open; if (open && !notifications.length) apiGet('/admin/notifications?limit=10').then(r => { if (r) { notifications = r.notifications || []; notifCount = r.unread_count || 0; } })" class="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors">
                         <i data-lucide="bell" class="w-5 h-5"></i>
-                        <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-gray-900"></span>
+                        <span x-show="notifCount > 0" x-text="notifCount" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full border-2 border-gray-900 text-[10px] font-bold text-white flex items-center justify-center"></span>
                     </button>
                     <div x-show="open" @click.away="open = false" x-cloak
                          x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                          class="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
                         <div class="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
                             <h3 class="text-sm font-semibold text-white">Notifications</h3>
-                            <span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">5 new</span>
+                            <span x-show="notifCount > 0" x-text="notifCount + ' new'" class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"></span>
                         </div>
                         <div class="max-h-64 overflow-y-auto">
-                            <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="wallet" class="w-4 h-4 text-green-400"></i></div>
-                                <div><p class="text-sm text-gray-200">New deposit of $5,000 from John D.</p><p class="text-xs text-gray-500 mt-1">2 minutes ago</p></div>
-                            </div>
-                            <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="user-plus" class="w-4 h-4 text-yellow-400"></i></div>
-                                <div><p class="text-sm text-gray-200">New user registration: Sarah M.</p><p class="text-xs text-gray-500 mt-1">15 minutes ago</p></div>
-                            </div>
-                            <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="alert-circle" class="w-4 h-4 text-red-400"></i></div>
-                                <div><p class="text-sm text-gray-200">KYC verification pending: Michael B.</p><p class="text-xs text-gray-500 mt-1">1 hour ago</p></div>
-                            </div>
-                            <div class="px-4 py-3 hover:bg-gray-700/50 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0"><i data-lucide="banknote" class="w-4 h-4 text-blue-400"></i></div>
-                                <div><p class="text-sm text-gray-200">Withdrawal request: $2,500 by Emma W.</p><p class="text-xs text-gray-500 mt-1">3 hours ago</p></div>
-                            </div>
+                            <template x-if="notifications.length === 0"><p class="px-4 py-6 text-center text-sm text-gray-500">No notifications yet</p></template>
+                            <template x-for="n in notifications" :key="n.id">
+                                <div class="px-4 py-3 hover:bg-gray-700/50 border-b border-gray-700/50 flex items-start gap-3">
+                                    <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" :class="{'bg-green-400': n.color==='green','bg-yellow-400': n.color==='yellow','bg-red-400': n.color==='red','bg-blue-400': n.color==='blue','bg-orange-400': n.color==='orange','bg-purple-400': n.color==='purple'}"></div>
+                                    <div><p class="text-sm text-gray-200" x-text="n.message"></p><p class="text-xs text-gray-500 mt-1" x-text="timeAgo(n.time)"></p></div>
+                                </div>
+                            </template>
                         </div>
                         <div class="px-4 py-2 border-t border-gray-700 text-center">
                             <button class="text-xs text-primary-400 hover:text-primary-300 font-medium">View all notifications</button>
@@ -213,7 +205,7 @@
                             <a href="profile.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50"><i data-lucide="user" class="w-4 h-4"></i> Profile</a>
                             <a href="settings.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50"><i data-lucide="settings" class="w-4 h-4"></i> Settings</a>
                             <hr class="border-gray-700">
-                            <a href="login.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-gray-700/50"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
+                            <a href="login.html" onclick="adminLogout(); return false;" class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-gray-700/50"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
                         </div>
                     </div>
                 </div>
@@ -290,6 +282,11 @@
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Homepage Description</label>
+                            <textarea rows="3" x-model="settingValues.site_description" placeholder="Short description shown in the homepage footer and SEO metadata"
+                                      class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors resize-none"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-300 mb-2">Platform Logo</label>
                             <div class="flex items-center gap-4">
                                 <div class="w-16 h-16 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden">
@@ -303,6 +300,50 @@
                                     <p class="text-xs text-gray-500 mt-2">PNG, JPG or SVG. Max 2MB. Recommended 200x200px.</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-gray-800">
+
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-1">Homepage Contact</h3>
+                    <p class="text-sm text-gray-400 mb-6">These values are shown on the public homepage and footer.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Support Email</label>
+                            <input type="email" x-model="settingValues.support_email" placeholder="support@example.com"
+                                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Contact Phone</label>
+                            <input type="text" x-model="settingValues.contact_phone" placeholder="+1 555 000 0000"
+                                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Company Address</label>
+                            <input type="text" x-model="settingValues.company_address" placeholder="Office address"
+                                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Twitter/X URL</label>
+                            <input type="url" x-model="settingValues.twitter_url" placeholder="https://x.com/yourbrand"
+                                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">LinkedIn URL</label>
+                            <input type="url" x-model="settingValues.linkedin_url" placeholder="https://linkedin.com/company/yourbrand"
+                                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Facebook URL</label>
+                            <input type="url" x-model="settingValues.facebook_url" placeholder="https://facebook.com/yourbrand"
+                                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Telegram URL</label>
+                            <input type="url" x-model="settingValues.telegram_url" placeholder="https://t.me/yourbrand"
+                                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                     </div>
                 </div>
@@ -426,50 +467,50 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Default Leverage</label>
                             <div class="flex items-center gap-3">
-                                <input type="range" min="1" max="500" value="100" class="flex-1 accent-primary-600">
-                                <span class="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 w-20 text-center">100x</span>
+                                <input type="range" min="1" max="500" x-model="settingValues.default_leverage" class="flex-1 accent-primary-600">
+                                <span class="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 w-20 text-center" x-text="(settingValues.default_leverage || 100) + 'x'"></span>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">Maximum leverage available to users. Range: 1x - 500x.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Max Open Positions</label>
-                            <input type="number" value="50" min="1" max="500"
+                            <input type="number" x-model="settingValues.max_open_positions" min="1" max="500"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Maximum simultaneous open positions per user.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Spread Markup (pips)</label>
-                            <input type="number" value="1.5" step="0.1" min="0" max="20"
+                            <input type="number" x-model="settingValues.spread_markup" step="0.1" min="0" max="20"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Additional spread added to market prices.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Commission Type</label>
-                            <select class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
-                                <option value="percentage" selected>Percentage of Trade Volume</option>
+                            <select x-model="settingValues.commission_type" class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                                <option value="percentage">Percentage of Trade Volume</option>
                                 <option value="fixed">Fixed Per Lot</option>
                                 <option value="spread">Included in Spread</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Commission Rate (%)</label>
-                            <input type="number" value="0.05" step="0.01" min="0" max="5"
+                            <input type="number" x-model="settingValues.commission_rate" step="0.01" min="0" max="5"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Percentage commission charged per trade.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Min Trade Size ($)</label>
-                            <input type="number" value="10" min="1"
+                            <input type="number" x-model="settingValues.min_trade_size" min="1"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Max Trade Size ($)</label>
-                            <input type="number" value="100000" min="100"
+                            <input type="number" x-model="settingValues.max_trade_size" min="100"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Liquidation Threshold (%)</label>
-                            <input type="number" value="90" min="50" max="100"
+                            <input type="number" x-model="settingValues.liquidation_threshold" min="50" max="100"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Margin level at which positions are liquidated.</p>
                         </div>
@@ -485,13 +526,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Copy Trading Fee (%)</label>
-                            <input type="number" value="10" step="1" min="0" max="50"
+                            <input type="number" x-model="settingValues.copy_trading_fee" step="1" min="0" max="50"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Performance fee charged to copy traders on profits.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Max Copiers Per Trader</label>
-                            <input type="number" value="500" min="1" max="10000"
+                            <input type="number" x-model="settingValues.max_copiers_per_trader" min="1" max="10000"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                     </div>
@@ -515,7 +556,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="auto-trading" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="auto-trading" :checked="settingValues.auto_trading_enabled === 'true' || settingValues.auto_trading_enabled === true" @change="settingValues.auto_trading_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="auto-trading" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -532,7 +573,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="risk-mgmt" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="risk-mgmt" :checked="settingValues.risk_management_enabled === 'true' || settingValues.risk_management_enabled === true" @change="settingValues.risk_management_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="risk-mgmt" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -560,12 +601,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Minimum Deposit ($)</label>
-                            <input type="number" value="50" min="1"
+                            <input type="number" x-model="settingValues.min_deposit" min="1"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Maximum Deposit ($)</label>
-                            <input type="number" value="100000" min="100"
+                            <input type="number" x-model="settingValues.max_deposit" min="100"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                     </div>
@@ -589,7 +630,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="deposit-crypto" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="deposit-crypto" :checked="settingValues.crypto_enabled === 'true' || settingValues.crypto_enabled === true" @change="settingValues.crypto_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="deposit-crypto" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -606,7 +647,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="deposit-bank" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="deposit-bank" :checked="settingValues.bank_transfer_enabled === 'true' || settingValues.bank_transfer_enabled === true" @change="settingValues.bank_transfer_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="deposit-bank" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -623,7 +664,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="deposit-mobile" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="deposit-mobile" :checked="settingValues.mobile_money_enabled === 'true' || settingValues.mobile_money_enabled === true" @change="settingValues.mobile_money_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="deposit-mobile" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -641,25 +682,25 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Minimum Withdrawal ($)</label>
-                            <input type="number" value="25" min="1"
+                            <input type="number" x-model="settingValues.min_withdrawal" min="1"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Maximum Withdrawal ($)</label>
-                            <input type="number" value="50000" min="100"
+                            <input type="number" x-model="settingValues.max_withdrawal" min="100"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Withdrawal Fee (%)</label>
-                            <input type="number" value="1.5" step="0.1" min="0" max="10"
+                            <input type="number" x-model="settingValues.withdrawal_fee" step="0.1" min="0" max="10"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Processing Time</label>
-                            <select class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                            <select x-model="settingValues.withdrawal_processing_time" class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                                 <option value="instant">Instant</option>
                                 <option value="1h">Within 1 hour</option>
-                                <option value="24h" selected>Within 24 hours</option>
+                                <option value="24h">Within 24 hours</option>
                                 <option value="48h">Within 48 hours</option>
                                 <option value="72h">Within 3 business days</option>
                             </select>
@@ -695,7 +736,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="enforce-2fa" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="enforce-2fa" :checked="settingValues.enforce_2fa === 'true' || settingValues.enforce_2fa === true" @change="settingValues.enforce_2fa = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="enforce-2fa" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -712,7 +753,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="admin-2fa" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="admin-2fa" :checked="settingValues.admin_2fa === 'true' || settingValues.admin_2fa === true" @change="settingValues.admin_2fa = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="admin-2fa" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -730,24 +771,24 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Session Timeout (minutes)</label>
-                            <input type="number" value="30" min="5" max="1440"
+                            <input type="number" x-model="settingValues.session_timeout" min="5" max="1440"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Inactive sessions will be terminated after this period.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Max Login Attempts</label>
-                            <input type="number" value="5" min="3" max="20"
+                            <input type="number" x-model="settingValues.max_login_attempts" min="3" max="20"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Account locks after this many failed attempts.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Lockout Duration (minutes)</label>
-                            <input type="number" value="30" min="5" max="1440"
+                            <input type="number" x-model="settingValues.lockout_duration" min="5" max="1440"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Password Minimum Length</label>
-                            <input type="number" value="8" min="6" max="64"
+                            <input type="number" x-model="settingValues.password_min_length" min="6" max="64"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                     </div>
@@ -771,7 +812,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="ip-whitelist" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="ip-whitelist" :checked="settingValues.ip_whitelist_enabled === 'true' || settingValues.ip_whitelist_enabled === true" @change="settingValues.ip_whitelist_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="ip-whitelist" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -779,7 +820,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Whitelisted IPs</label>
-                            <textarea rows="3" placeholder="Enter IP addresses, one per line&#10;192.168.1.1&#10;10.0.0.1"
+                            <textarea rows="3" x-model="settingValues.whitelisted_ips" placeholder="Enter IP addresses, one per line&#10;192.168.1.1&#10;10.0.0.1"
                                       class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors font-mono text-xs"></textarea>
                         </div>
                     </div>
@@ -853,7 +894,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="notif-registration" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="notif-registration" :checked="settingValues.email_referral_enabled === 'true' || settingValues.email_referral_enabled === true" @change="settingValues.email_referral_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="notif-registration" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -870,7 +911,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="notif-deposit" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="notif-deposit" :checked="settingValues.email_deposit_enabled === 'true' || settingValues.email_deposit_enabled === true" @change="settingValues.email_deposit_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="notif-deposit" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -887,7 +928,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="notif-withdrawal" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="notif-withdrawal" :checked="settingValues.email_withdrawal_enabled === 'true' || settingValues.email_withdrawal_enabled === true" @change="settingValues.email_withdrawal_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="notif-withdrawal" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -904,7 +945,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="notif-kyc" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="notif-kyc" :checked="settingValues.email_kyc_enabled === 'true' || settingValues.email_kyc_enabled === true" @change="settingValues.email_kyc_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="notif-kyc" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -921,7 +962,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="notif-trade" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="notif-trade" :checked="settingValues.email_trade_enabled === 'true' || settingValues.email_trade_enabled === true" @change="settingValues.email_trade_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="notif-trade" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -948,7 +989,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="sms-login" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="sms-login" :checked="settingValues.sms_enabled === 'true' || settingValues.sms_enabled === true" @change="settingValues.sms_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="sms-login" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -965,7 +1006,7 @@
                                 </div>
                             </div>
                             <div class="relative inline-block w-12 align-middle select-none">
-                                <input type="checkbox" id="sms-withdrawal" checked class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
+                                <input type="checkbox" id="sms-withdrawal" :checked="settingValues.sms_withdrawal_enabled === 'true' || settingValues.sms_withdrawal_enabled === true" @change="settingValues.sms_withdrawal_enabled = $event.target.checked ? 'true' : 'false'" class="toggle-checkbox block w-12 h-6 rounded-full bg-gray-700 appearance-none cursor-pointer border border-gray-600 checked:bg-primary-600 transition-colors" />
                                 <label for="sms-withdrawal" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer border border-gray-500">
                                     <span class="block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 translate-x-0.5 mt-[1px] ml-[1px]"></span>
                                 </label>
@@ -983,27 +1024,27 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Large Deposit Alert ($)</label>
-                            <input type="number" value="10000" min="1000"
+                            <input type="number" x-model="settingValues.large_deposit_alert" min="1000"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Alert admin when a deposit exceeds this amount.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Large Withdrawal Alert ($)</label>
-                            <input type="number" value="25000" min="1000"
+                            <input type="number" x-model="settingValues.large_withdrawal_alert" min="1000"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Alert admin when a withdrawal exceeds this amount.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Failed Login Threshold</label>
-                            <input type="number" value="10" min="5" max="100"
+                            <input type="number" x-model="settingValues.failed_login_threshold" min="5" max="100"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                             <p class="text-xs text-gray-500 mt-1">Alert admin on this many failed login attempts in 1 hour.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">New User Registration Alert</label>
-                            <select class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                            <select x-model="settingValues.registration_alerts" class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                                 <option value="every">Every Registration</option>
-                                <option value="hourly" selected>Digest Hourly</option>
+                                <option value="hourly">Digest Hourly</option>
                                 <option value="daily">Daily Summary</option>
                                 <option value="off">Disabled</option>
                             </select>
@@ -1030,45 +1071,45 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">SMTP Host</label>
-                            <input type="text" value="smtp.HoldRiseX.com"
+                            <input type="text" x-model="settingValues.smtp_host" placeholder="smtp.example.com"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">SMTP Port</label>
-                            <input type="number" value="587"
+                            <input type="number" x-model="settingValues.smtp_port" placeholder="587"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">SMTP Username</label>
-                            <input type="text" value="admin@HoldRiseX.com"
+                            <input type="text" x-model="settingValues.smtp_username" placeholder="admin@example.com"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">SMTP Password</label>
-                            <input type="password" value="••••••••••••"
+                            <input type="password" x-model="settingValues.smtp_password" placeholder="••••••••"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Encryption</label>
-                            <select class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
-                                <option value="tls" selected>TLS</option>
+                            <select x-model="settingValues.smtp_encryption" class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+                                <option value="tls">TLS</option>
                                 <option value="ssl">SSL</option>
                                 <option value="none">None</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">From Address</label>
-                            <input type="email" value="noreply@HoldRiseX.com"
+                            <input type="email" x-model="settingValues.from_address" placeholder="noreply@example.com"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">From Name</label>
-                            <input type="text" value="HoldRiseX"
+                            <input type="text" x-model="settingValues.from_name" placeholder="Platform Name"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Reply-To Address</label>
-                            <input type="email" value="support@HoldRiseX.com"
+                            <input type="email" x-model="settingValues.reply_to_address" placeholder="support@example.com"
                                    class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
                         </div>
                     </div>

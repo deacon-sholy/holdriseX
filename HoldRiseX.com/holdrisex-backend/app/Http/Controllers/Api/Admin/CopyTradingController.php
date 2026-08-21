@@ -17,6 +17,13 @@ class CopyTradingController extends Controller
         return response()->json($traders);
     }
 
+    public function show($id): JsonResponse
+    {
+        $trader = CopyTrader::withCount('copyTrades')->findOrFail($id);
+
+        return response()->json($trader);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -68,6 +75,17 @@ class CopyTradingController extends Controller
     public function destroy($id): JsonResponse
     {
         $trader = CopyTrader::findOrFail($id);
+
+        $activeCount = CopyTrade::where('trader_id', $id)
+            ->where('status', 'open')
+            ->count();
+
+        if ($activeCount > 0) {
+            return response()->json([
+                'message' => "Cannot delete trader: {$activeCount} active subscriber(s). Deactivate instead.",
+            ], 422);
+        }
+
         $trader->delete();
 
         return response()->json(['message' => 'Trader deleted.']);

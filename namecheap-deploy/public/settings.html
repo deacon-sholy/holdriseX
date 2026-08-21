@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: localStorage.getItem('theme') !== 'light' }" :class="{ 'dark': darkMode }" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoldRiseX - Profile Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+                        dark: { 100:'#374151',200:'#1F2937',300:'#111827',400:'#0F172A',500:'#0B1120' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="user-api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+        html:not(.dark) body { background: #f3f4f6; color: #111827; }
+        html:not(.dark) .bg-dark-300 { background: #f9fafb; }
+        html:not(.dark) .bg-dark-400 { background: #ffffff; }
+        html:not(.dark) .border-gray-800 { border-color: #e5e7eb; }
+        html:not(.dark) .text-gray-200, html:not(.dark) .text-gray-300, html:not(.dark) .text-gray-400 { color: #4b5563; }
+        html:not(.dark) .hover\:bg-dark-200:hover { background: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-dark-300 text-gray-200 font-sans min-h-screen"
+      x-data="settingsPage()" x-init="init()" x-cloak>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/60 z-40 md:hidden" x-transition.opacity style="display:none"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="fixed top-0 left-0 h-full w-72 bg-dark-400 border-r border-gray-800 z-50 flex flex-col transition-transform duration-300"
+           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+
+        <!-- Logo -->
+        <div class="h-16 flex items-center justify-between px-5 border-b border-gray-800">
+            <a href="index.html" class="flex items-center gap-2">
+                <span class="text-xl font-extrabold tracking-tight text-white">Hold<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">RiseX</span></span>
+            </a>
+            <button @click="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-5 border-b border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white truncate" x-text="user?.name || 'User'"></p>
+                    <p class="text-xs text-gray-400 truncate" x-text="user?.email || ''"></p>
+                </div>
+            </div>
+            <div class="mt-3 bg-dark-300 rounded-lg p-3">
+                <p class="text-xs text-gray-400">Available Balance</p>
+                <p class="text-lg font-bold text-white" x-text="formatCurrency(user?.balance)"></p>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mb-2">Overview</p>
+            <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+            </a>
+            <a href="statement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Account Statement
+            </a>
+
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Trading & Markets</p>
+            <a href="trade.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="activity" class="w-4 h-4"></i> Live Markets
+                <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium">Live</span>
+            </a>
+            <a href="copy.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="copy" class="w-4 h-4"></i> Copy Trading
+                <span class="ml-auto text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-medium">Pro</span>
+            </a>
+
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Portfolio</p>
+            <a href="plans.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="briefcase" class="w-4 h-4"></i> Investment Plans
+            </a>
+            <a href="portfolio.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i> My Portfolio
+            </a>
+
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Wallet & Funds</p>
+            <a href="deposit.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="arrow-down-circle" class="w-4 h-4"></i> Deposit Funds
+            </a>
+            <a href="withdraw.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Withdraw Funds
+            </a>
+
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 mt-6 mb-2">Account</p>
+            <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400">
+                <i data-lucide="settings" class="w-4 h-4"></i> Profile Settings
+            </a>
+            <a href="kyc.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification
+                <span class="ml-auto text-[10px]" :class="user?.kyc_status === 'verified' ? 'bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium' : 'bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium'" x-text="user?.kyc_status === 'verified' ? 'Verified' : 'Pending'"></span>
+            </a>
+            <a href="referrals.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="users" class="w-4 h-4"></i> Referral Program
+                <span class="ml-auto text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">5%</span>
+            </a>
+            <a href="support.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-dark-300 hover:text-white transition">
+                <i data-lucide="headphones" class="w-4 h-4"></i> Support
+            </a>
+
+            <div class="pt-4 mt-4 border-t border-gray-800">
+                <button @click="userLogout()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition w-full">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="md:ml-64 min-h-screen flex flex-col">
+
+        <!-- TOP NAVBAR -->
+        <nav class="sticky top-0 z-40 bg-dark-400/95 backdrop-blur-xl border-b border-gray-800">
+            <div class="flex items-center justify-between h-16 px-4 lg:px-6">
+                <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 text-gray-400 hover:text-white">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="hidden md:block"></div>
+                <div class="flex items-center gap-4">
+                    <div class="bg-dark-300 rounded-xl px-5 py-2 flex items-center gap-3 border border-gray-800">
+                        <div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-4 h-4 text-green-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase">Balance</p>
+                            <p class="text-sm font-bold text-white" x-text="formatCurrency(user?.balance)"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition hidden sm:block">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <a href="deposit.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-down-circle" class="w-4 h-4 text-green-400"></i> Deposit</a>
+                            <a href="withdraw.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="arrow-up-circle" class="w-4 h-4 text-red-400"></i> Withdraw</a>
+                            <a href="trade.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="activity" class="w-4 h-4 text-blue-400"></i> Trade</a>
+                        </div>
+                    </div>
+                    <button @click="toggleTheme()" class="p-2 text-gray-400 hover:text-white hover:bg-dark-300 rounded-lg transition">
+                        <i :data-lucide="darkMode ? 'sun' : 'moon'" class="w-5 h-5"></i>
+                    </button>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-dark-300 transition">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                            <span class="text-sm text-gray-300 hidden sm:block" x-text="user?.name?.split(' ')[0] || 'User'"></span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
+                        </button>
+                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-dark-400 border border-gray-800 rounded-xl shadow-xl py-2 z-50" style="display:none">
+                            <div class="px-4 py-2 border-b border-gray-800">
+                                <p class="text-sm font-semibold text-white" x-text="user?.name || 'User'"></p>
+                                <p class="text-xs text-gray-400" x-text="user?.email || ''"></p>
+                            </div>
+                            <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="settings" class="w-4 h-4"></i> Profile Settings</a>
+                            <a href="kyc.html" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-300"><i data-lucide="shield-check" class="w-4 h-4"></i> KYC Verification</a>
+                            <div class="border-t border-gray-800 mt-1 pt-1">
+                                <button @click="userLogout()" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 p-4 lg:p-6">
+
+            <!-- Loading State -->
+            <div x-show="loading" class="flex items-center justify-center py-20">
+                <div class="text-center">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="mt-3 text-gray-400 text-sm">Loading profile...</p>
+                </div>
+            </div>
+
+            <div x-show="!loading">
+                <!-- Page Header -->
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white">Profile Settings</h1>
+                    <p class="text-sm text-gray-400 mt-1">Manage your account information and security</p>
+                </div>
+
+                <!-- Profile Card -->
+                <div class="bg-dark-400 border border-gray-800 rounded-xl p-6 mb-6">
+                    <div class="flex flex-col sm:flex-row items-center gap-5">
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-3xl" x-text="(user?.name || 'U')[0]?.toUpperCase()"></div>
+                        <div class="text-center sm:text-left flex-1">
+                            <h2 class="text-xl font-bold text-white" x-text="user?.name || 'User'"></h2>
+                            <p class="text-sm text-gray-400" x-text="user?.email || ''"></p>
+                            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2">
+                                <span class="text-xs text-gray-500">Member since <span x-text="formatDate(user?.created_at)"></span></span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                                      :class="user?.kyc_status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'"
+                                      x-text="user?.kyc_status === 'verified' ? 'KYC Verified' : 'KYC Pending'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center"><i data-lucide="arrow-down-circle" class="w-5 h-5 text-green-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Deposits</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="user?.deposits_count || 0"></p>
+                    </div>
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><i data-lucide="arrow-up-circle" class="w-5 h-5 text-red-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Withdrawals</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="user?.withdrawals_count || 0"></p>
+                    </div>
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center"><i data-lucide="briefcase" class="w-5 h-5 text-purple-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Investments</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="user?.investments_count || 0"></p>
+                    </div>
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center"><i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i></div>
+                            <span class="text-xs text-gray-400 font-medium">Trades</span>
+                        </div>
+                        <p class="text-xl font-bold text-white" x-text="user?.trades_count || 0"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+                    <!-- Profile Edit Form -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><i data-lucide="user" class="w-5 h-5 text-blue-400"></i></div>
+                            <h3 class="text-base font-semibold text-white">Edit Profile</h3>
+                        </div>
+                        <form @submit.prevent="saveProfile()" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Full Name</label>
+                                <input x-model="profileForm.name" type="text" required
+                                       class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600"
+                                       placeholder="Enter your full name">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Email Address</label>
+                                <input :value="user?.email" type="email" disabled
+                                       class="w-full bg-dark-300/50 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                                       placeholder="Email cannot be changed">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Phone Number</label>
+                                <input x-model="profileForm.phone" type="tel"
+                                       class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600"
+                                       placeholder="Enter your phone number">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Country</label>
+                                <input x-model="profileForm.country" type="text"
+                                       class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600"
+                                       placeholder="Enter your country">
+                            </div>
+                            <button type="submit" :disabled="savingProfile"
+                                    class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-indigo-700 transition shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <svg x-show="savingProfile" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span x-text="savingProfile ? 'Saving...' : 'Save Changes'"></span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Change Password -->
+                    <div class="bg-dark-400 border border-gray-800 rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center"><i data-lucide="lock" class="w-5 h-5 text-yellow-400"></i></div>
+                            <h3 class="text-base font-semibold text-white">Change Password</h3>
+                        </div>
+                        <form @submit.prevent="changePassword()" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Current Password</label>
+                                <div class="relative">
+                                    <input x-model="passwordForm.current_password" :type="showCurrentPw ? 'text' : 'password'" required
+                                           class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600"
+                                           placeholder="Enter current password">
+                                    <button type="button" @click="showCurrentPw = !showCurrentPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                                        <i :data-lucide="showCurrentPw ? 'eye-off' : 'eye'" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">New Password</label>
+                                <div class="relative">
+                                    <input x-model="passwordForm.password" :type="showNewPw ? 'text' : 'password'" required
+                                           class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600"
+                                           placeholder="Enter new password"
+                                           @input="validatePassword()">
+                                    <button type="button" @click="showNewPw = !showNewPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                                        <i :data-lucide="showNewPw ? 'eye-off' : 'eye'" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <div class="mt-2 flex gap-1.5">
+                                    <template x-for="(rule, i) in passwordRules" :key="i">
+                                        <div class="flex items-center gap-1">
+                                            <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="rule.met ? 'bg-green-400' : 'bg-gray-600'"></div>
+                                            <span class="text-[10px]" :class="rule.met ? 'text-green-400' : 'text-gray-500'" x-text="rule.label"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1.5">Confirm New Password</label>
+                                <div class="relative">
+                                    <input x-model="passwordForm.password_confirmation" :type="showConfirmPw ? 'text' : 'password'" required
+                                           class="w-full bg-dark-300 border border-gray-800 rounded-lg px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition placeholder-gray-600"
+                                           placeholder="Confirm new password">
+                                    <button type="button" @click="showConfirmPw = !showConfirmPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                                        <i :data-lucide="showConfirmPw ? 'eye-off' : 'eye'" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <p x-show="passwordForm.password_confirmation && passwordForm.password !== passwordForm.password_confirmation" class="text-[11px] text-red-400 mt-1.5">Passwords do not match</p>
+                            </div>
+                            <button type="submit" :disabled="savingPassword || !isPasswordValid()"
+                                    class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-yellow-600 hover:to-orange-700 transition shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <svg x-show="savingPassword" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span x-text="savingPassword ? 'Updating...' : 'Change Password'"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Account Info -->
+                <div class="bg-dark-400 border border-gray-800 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-gray-500/10 flex items-center justify-center"><i data-lucide="info" class="w-5 h-5 text-gray-400"></i></div>
+                        <h3 class="text-base font-semibold text-white">Account Information</h3>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-dark-300 rounded-lg p-4">
+                            <p class="text-xs text-gray-400 mb-1">Email</p>
+                            <p class="text-sm font-medium text-white truncate" x-text="user?.email || '-'"></p>
+                        </div>
+                        <div class="bg-dark-300 rounded-lg p-4">
+                            <p class="text-xs text-gray-400 mb-1">Role</p>
+                            <p class="text-sm font-medium text-white capitalize" x-text="user?.role || 'user'"></p>
+                        </div>
+                        <div class="bg-dark-300 rounded-lg p-4">
+                            <p class="text-xs text-gray-400 mb-1">Member Since</p>
+                            <p class="text-sm font-medium text-white" x-text="formatDate(user?.created_at)"></p>
+                        </div>
+                        <div class="bg-dark-300 rounded-lg p-4">
+                            <p class="text-xs text-gray-400 mb-1">Last Login</p>
+                            <p class="text-sm font-medium text-white" x-text="user?.last_login ? formatDate(user?.last_login) : 'N/A'"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function settingsPage() {
+            return {
+                user: null,
+                loading: true,
+                sidebarOpen: false,
+                savingProfile: false,
+                savingPassword: false,
+                showCurrentPw: false,
+                showNewPw: false,
+                showConfirmPw: false,
+                profileForm: { name: '', phone: '', country: '' },
+                passwordForm: { current_password: '', password: '', password_confirmation: '' },
+                passwordRules: [
+                    { label: '8+ chars', met: false },
+                    { label: 'Uppercase', met: false },
+                    { label: 'Number', met: false },
+                    { label: 'Match', met: false }
+                ],
+
+                async init() {
+                    if (!requireUserAuth()) return;
+                    this.user = getUserData();
+                    try {
+                        const data = await userApiGet('/user/profile');
+                        if (data) {
+                            this.user = data;
+                            setUserData(data);
+                        }
+                    } catch(e) { console.error(e); }
+                    this.profileForm.name = this.user?.name || '';
+                    this.profileForm.phone = this.user?.phone || '';
+                    this.profileForm.country = this.user?.country || '';
+                    this.loading = false;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                validatePassword() {
+                    const pw = this.passwordForm.password;
+                    this.passwordRules[0].met = pw.length >= 8;
+                    this.passwordRules[1].met = /[A-Z]/.test(pw);
+                    this.passwordRules[2].met = /[0-9]/.test(pw);
+                    this.passwordRules[3].met = pw.length > 0 && pw === this.passwordForm.password_confirmation;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                isPasswordValid() {
+                    return this.passwordForm.current_password.length > 0 &&
+                           this.passwordForm.password.length >= 8 &&
+                           this.passwordForm.password === this.passwordForm.password_confirmation;
+                },
+
+                async saveProfile() {
+                    this.savingProfile = true;
+                    try {
+                        const data = await userApiPut('/user/profile', {
+                            name: this.profileForm.name,
+                            phone: this.profileForm.phone,
+                            country: this.profileForm.country
+                        });
+                        if (data && !data.error) {
+                            const updated = { ...this.user, ...data };
+                            this.user = updated;
+                            setUserData(updated);
+                            Swal.fire({ icon: 'success', title: 'Profile Updated', text: 'Your profile has been saved successfully.', confirmButtonColor: '#6366f1', background: '#0F172A', color: '#e5e7eb' });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Update Failed', text: data?.error || data?.message || 'Something went wrong.', confirmButtonColor: '#6366f1', background: '#0F172A', color: '#e5e7eb' });
+                        }
+                    } catch(e) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to update profile.', confirmButtonColor: '#6366f1', background: '#0F172A', color: '#e5e7eb' });
+                    }
+                    this.savingProfile = false;
+                },
+
+                async changePassword() {
+                    if (!this.isPasswordValid()) return;
+                    this.savingPassword = true;
+                    try {
+                        const data = await userApiPut('/user/password', {
+                            current_password: this.passwordForm.current_password,
+                            password: this.passwordForm.password,
+                            password_confirmation: this.passwordForm.password_confirmation
+                        });
+                        if (data && !data.error) {
+                            this.passwordForm = { current_password: '', password: '', password_confirmation: '' };
+                            this.passwordRules.forEach(r => r.met = false);
+                            Swal.fire({ icon: 'success', title: 'Password Changed', text: 'Your password has been updated successfully.', confirmButtonColor: '#6366f1', background: '#0F172A', color: '#e5e7eb' });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Change Failed', text: data?.error || data?.message || 'Incorrect current password.', confirmButtonColor: '#6366f1', background: '#0F172A', color: '#e5e7eb' });
+                        }
+                    } catch(e) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to change password.', confirmButtonColor: '#6366f1', background: '#0F172A', color: '#e5e7eb' });
+                    }
+                    this.savingPassword = false;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                toggleTheme() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+                    this.$nextTick(() => lucide.createIcons());
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+        document.addEventListener('alpine:updated', () => lucide.createIcons());
+    </script>
+</body>
+</html>

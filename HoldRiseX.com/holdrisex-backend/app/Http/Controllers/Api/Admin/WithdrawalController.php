@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Withdrawal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,7 +42,7 @@ class WithdrawalController extends Controller
         return response()->json($withdrawal);
     }
 
-    public function approve($id): JsonResponse
+    public function approve(Request $request, $id): JsonResponse
     {
         $withdrawal = Withdrawal::findOrFail($id);
 
@@ -51,6 +52,14 @@ class WithdrawalController extends Controller
 
         if ($withdrawal->status === 'pending') {
             $withdrawal->update(['status' => 'processing']);
+
+            AuditLog::create([
+                'user_id' => $request->user()->id,
+                'action' => 'withdrawal_processing',
+                'details' => "Set withdrawal #{$withdrawal->id} (\${$withdrawal->amount}) to processing (user: {$withdrawal->user->email})",
+                'ip_address' => $request->ip(),
+                'severity' => 'info',
+            ]);
 
             return response()->json([
                 'message' => 'Withdrawal set to processing.',
@@ -63,9 +72,15 @@ class WithdrawalController extends Controller
                 'status' => 'completed',
                 'processed_at' => now(),
             ]);
-
-            $withdrawal->user->decrement('balance', $withdrawal->amount);
         });
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'withdrawal_approved',
+            'details' => "Approved withdrawal #{$withdrawal->id} for \${$withdrawal->amount} (user: {$withdrawal->user->email})",
+            'ip_address' => $request->ip(),
+            'severity' => 'info',
+        ]);
 
         return response()->json([
             'message' => 'Withdrawal approved and completed.',
@@ -73,7 +88,7 @@ class WithdrawalController extends Controller
         ]);
     }
 
-    public function reject($id): JsonResponse
+    public function reject(Request $request, $id): JsonResponse
     {
         $withdrawal = Withdrawal::findOrFail($id);
 
@@ -81,14 +96,26 @@ class WithdrawalController extends Controller
             return response()->json(['message' => 'Withdrawal cannot be rejected.'], 422);
         }
 
-        $withdrawal->update([
-            'status' => 'rejected',
-            'admin_note' => request()->input('reason', 'Rejected by admin'),
-            'processed_at' => now(),
+        DB::transaction(function () use ($withdrawal) {
+            $withdrawal->update([
+                'status' => 'rejected',
+                'admin_note' => $request->input('reason', 'Rejected by admin'),
+                'processed_at' => now(),
+            ]);
+
+            $withdrawal->user->increment('balance', $withdrawal->amount);
+        });
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'withdrawal_rejected',
+            'details' => "Rejected withdrawal #{$withdrawal->id} for \${$withdrawal->amount}, refunded (user: {$withdrawal->user->email})",
+            'ip_address' => $request->ip(),
+            'severity' => 'warning',
         ]);
 
         return response()->json([
-            'message' => 'Withdrawal rejected.',
+            'message' => 'Withdrawal rejected. Amount has been refunded to user balance.',
             'withdrawal' => $withdrawal->fresh()->load('user'),
         ]);
     }

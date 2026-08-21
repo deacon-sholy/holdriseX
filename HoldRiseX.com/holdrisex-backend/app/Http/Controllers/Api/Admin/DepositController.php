@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Deposit;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -50,7 +51,7 @@ class DepositController extends Controller
         return response()->json($deposit);
     }
 
-    public function approve($id): JsonResponse
+    public function approve(Request $request, $id): JsonResponse
     {
         $deposit = Deposit::findOrFail($id);
 
@@ -65,7 +66,23 @@ class DepositController extends Controller
             ]);
 
             $deposit->user->increment('balance', $deposit->amount);
+
+            if ($deposit->user->referred_by) {
+                $referrer = \App\Models\User::find($deposit->user->referred_by);
+                if ($referrer) {
+                    $commission = round($deposit->amount * 0.05, 2);
+                    $referrer->increment('balance', $commission);
+                }
+            }
         });
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'deposit_approved',
+            'details' => "Approved deposit #{$deposit->id} for \${$deposit->amount} (user: {$deposit->user->email})",
+            'ip_address' => $request->ip(),
+            'severity' => 'info',
+        ]);
 
         return response()->json([
             'message' => 'Deposit approved and credited.',
@@ -73,8 +90,7 @@ class DepositController extends Controller
         ]);
     }
 
-    public function reject($id): JsonResponse
-    {
+    public function reject(Request $request, $id): JsonResponse    {
         $deposit = Deposit::findOrFail($id);
 
         if ($deposit->status !== 'pending') {
@@ -87,8 +103,44 @@ class DepositController extends Controller
             'processed_at' => now(),
         ]);
 
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'deposit_rejected',
+            'details' => "Rejected deposit #{$deposit->id} for \${$deposit->amount} (user: {$deposit->user->email})",
+            'ip_address' => $request->ip(),
+            'severity' => 'warning',
+        ]);
+
         return response()->json([
             'message' => 'Deposit rejected.',
+            'deposit' => $deposit->fresh()->load('user'),
+        ]);
+    }
+
+    public function refund($id): JsonResponse
+    {
+        $deposit = Deposit::findOrFail($id);
+
+        if ($deposit->status !== 'completed') {
+            return response()->json(['message' => 'Only completed deposits can be refunded.'], 422);
+        }
+
+        if ($deposit->user->balance < $deposit->amount) {
+            return response()->json(['message' => 'User has insufficient balance to refund ($' . number_format($deposit->user->balance, 2) . ' available).'], 422);
+        }
+
+        DB::transaction(function () use ($deposit) {
+            $deposit->user->decrement('balance', $deposit->amount);
+
+            $deposit->update([
+                'status' => 'refunded',
+                'admin_note' => request()->input('reason', 'Refunded by admin'),
+                'processed_at' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'message' => 'Deposit refunded and amount deducted from user balance.',
             'deposit' => $deposit->fresh()->load('user'),
         ]);
     }

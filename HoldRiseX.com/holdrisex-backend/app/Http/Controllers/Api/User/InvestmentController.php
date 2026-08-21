@@ -5,12 +5,26 @@ namespace App\Http\Controllers\Api\User;
 use App\Http\Controllers\Controller;
 use App\Models\InvestmentPlan;
 use App\Models\UserInvestment;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class InvestmentController extends Controller
 {
+    protected function calculateLiveEarnings(UserInvestment $investment): float
+    {
+        if ($investment->status !== 'active' || !$investment->plan) {
+            return (float) $investment->total_earned;
+        }
+
+        $today = Carbon::today();
+        $startDate = Carbon::parse($investment->start_date);
+        $daysElapsed = max(1, $startDate->diffInDays($today));
+        $effectiveDays = min($daysElapsed, $investment->plan->duration_days);
+
+        return round($investment->amount * ((float) $investment->plan->daily_return / 100) * $effectiveDays, 2);
+    }
     public function depositSettings(): JsonResponse
     {
         return response()->json([
@@ -92,6 +106,11 @@ class InvestmentController extends Controller
             ->latest()
             ->paginate($request->input('per_page', 15));
 
+        $investments->getCollection()->transform(function ($inv) {
+            $inv->live_earned = $this->calculateLiveEarnings($inv);
+            return $inv;
+        });
+
         return response()->json($investments);
     }
 
@@ -102,6 +121,8 @@ class InvestmentController extends Controller
             ->with('plan')
             ->findOrFail($id);
 
+        $investment->live_earned = $this->calculateLiveEarnings($investment);
+
         return response()->json($investment);
     }
 
@@ -109,10 +130,14 @@ class InvestmentController extends Controller
     {
         $user = $request->user();
 
+        $completedEarnings = $user->investments()->where('status', 'completed')->sum('total_earned');
+        $activeInvestments = $user->investments()->where('status', 'active')->with('plan')->get();
+        $activeEarnings = $activeInvestments->sum(fn ($inv) => $this->calculateLiveEarnings($inv));
+
         return response()->json([
             'total_invested' => (float) $user->investments()->sum('amount'),
-            'total_earned' => (float) $user->investments()->sum('total_earned'),
-            'active_investments' => $user->investments()->where('status', 'active')->count(),
+            'total_earned' => (float) ($completedEarnings + $activeEarnings),
+            'active_investments' => $activeInvestments->count(),
             'completed_investments' => $user->investments()->where('status', 'completed')->count(),
         ]);
     }

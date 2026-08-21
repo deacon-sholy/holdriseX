@@ -15,6 +15,11 @@ function clearAuthToken() {
     localStorage.removeItem('admin_user');
 }
 
+function adminLogout() {
+    clearAuthToken();
+    window.location.href = 'login.html';
+}
+
 function getAdminUser() {
     const u = localStorage.getItem('admin_user');
     return u ? JSON.parse(u) : null;
@@ -40,7 +45,7 @@ async function apiGet(path) {
     return res.json();
 }
 
-async function apiPost(path, data) {
+async function apiPost(path, data = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${getAuthToken()}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -114,4 +119,17 @@ function getAvatarColor(name) {
     let hash = 0;
     for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
+}
+
+function exportCSV(headers, rows, filename) {
+    const csvContent = [headers, ...rows].map(row => row.map(cell => {
+        const str = String(cell ?? '').replace(/"/g, '""');
+        return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str}"` : str;
+    }).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename || 'export.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
 }

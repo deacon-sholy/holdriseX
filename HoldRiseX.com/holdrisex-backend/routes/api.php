@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\DepositController;
 use App\Http\Controllers\Api\Admin\KycController;
 use App\Http\Controllers\Api\Admin\PlanController;
+use App\Http\Controllers\Api\Admin\NotificationController;
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Admin\TradeController;
 use App\Http\Controllers\Api\Admin\UserController;
@@ -20,8 +21,11 @@ Route::post('/admin/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum', 'admin')->prefix('admin')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/profile', [AuthController::class, 'profile']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
 
     Route::apiResource('users', UserController::class);
     Route::get('/users-stats', [UserController::class, 'stats']);
@@ -30,6 +34,7 @@ Route::middleware('auth:sanctum', 'admin')->prefix('admin')->group(function () {
     Route::apiResource('deposits', DepositController::class)->only(['index', 'show']);
     Route::post('/deposits/{id}/approve', [DepositController::class, 'approve']);
     Route::post('/deposits/{id}/reject', [DepositController::class, 'reject']);
+    Route::post('/deposits/{id}/refund', [DepositController::class, 'refund']);
     Route::get('/deposits-stats', [DepositController::class, 'stats']);
 
     Route::apiResource('withdrawals', WithdrawalController::class)->only(['index', 'show']);
@@ -67,6 +72,7 @@ Route::middleware('auth:sanctum', 'admin')->prefix('admin')->group(function () {
 
 // ─── User Routes ──────────────────────────────────────────────
 // Public (no auth)
+Route::get('/public-settings', [SettingController::class, 'publicSettings']);
 Route::get('/plans', [User\InvestmentController::class, 'plans']);
 Route::get('/deposit-settings', [User\InvestmentController::class, 'depositSettings']);
 Route::post('/user/register', [User\AuthController::class, 'register']);
@@ -122,4 +128,27 @@ Route::middleware('auth:sanctum', 'auth.user')->prefix('user')->group(function (
 
     Route::get('/announcements', [User\AnnouncementController::class, 'index']);
     Route::get('/announcements/{id}', [User\AnnouncementController::class, 'show']);
+
+    Route::get('/referrals', [User\ReferralController::class, 'index']);
+
+    // Wallet
+    Route::get('/wallet', [User\WalletController::class, 'index']);
+    Route::post('/wallet/connect', [User\WalletController::class, 'connect']);
+    Route::post('/wallet/disconnect', [User\WalletController::class, 'disconnect']);
+
+    // Signals
+    Route::get('/signals', [User\SignalController::class, 'index']);
+
+    // Tickets
+    Route::get('/tickets', [User\TicketController::class, 'index']);
+    Route::post('/tickets', [User\TicketController::class, 'store']);
+    Route::post('/tickets/{id}/reply', [User\TicketController::class, 'reply']);
+
+    // Transfers
+    Route::get('/transfers', [User\TransferController::class, 'index']);
+    Route::post('/transfer', [User\TransferController::class, 'store']);
+
+    // Credits
+    Route::get('/credits', [User\CreditController::class, 'index']);
+    Route::post('/credits', [User\CreditController::class, 'store']);
 });

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\KycDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class KycController extends Controller
         return response()->json($document);
     }
 
-    public function approve($id): JsonResponse
+    public function approve(Request $request, $id): JsonResponse
     {
         $document = KycDocument::findOrFail($id);
 
@@ -51,13 +52,21 @@ class KycController extends Controller
 
         $document->user->update(['kyc_status' => 'verified']);
 
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'kyc_approved',
+            'details' => "Approved KYC document #{$document->id} (user: {$document->user->email})",
+            'ip_address' => $request->ip(),
+            'severity' => 'info',
+        ]);
+
         return response()->json([
             'message' => 'KYC document approved.',
             'document' => $document->fresh()->load('user'),
         ]);
     }
 
-    public function reject($id): JsonResponse
+    public function reject(Request $request, $id): JsonResponse
     {
         $document = KycDocument::findOrFail($id);
 
@@ -67,8 +76,18 @@ class KycController extends Controller
 
         $document->update([
             'status' => 'rejected',
-            'admin_note' => request()->input('reason', request()->input('admin_note', 'Documents do not meet requirements.')),
+            'admin_note' => $request->input('reason', $request->input('admin_note', 'Documents do not meet requirements.')),
             'reviewed_at' => now(),
+        ]);
+
+        $document->user->update(['kyc_status' => 'rejected']);
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'kyc_rejected',
+            'details' => "Rejected KYC document #{$document->id} (user: {$document->user->email})",
+            'ip_address' => $request->ip(),
+            'severity' => 'warning',
         ]);
 
         return response()->json([
